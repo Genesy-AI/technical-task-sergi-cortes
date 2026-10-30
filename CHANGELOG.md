@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Backend API tests against an isolated SQLite database, a backend `typecheck` script, and frontend component tests with Testing Library.
 - Main OpenSpec spec `lead-country-code`, synced from the archived `fix-csv-country-codes` change.
 - Planned OpenSpec changes `add-lead-fields` and `enrich-lead-phone`, with feature specs in `design/features`.
+- Main OpenSpec spec `email-verification`, synced from the archived `fix-email-verification-stall` change.
 - Per-row email verification status in the leads table, with a spinner while verifying and a Retry button when a check could not complete.
 - Temporal workflow tests with `@temporalio/testing` time skipping, and API tests that run the verify endpoint against a Temporal test server.
 - `TEMPORAL_ADDRESS`, `TEMPORAL_NAMESPACE`, and `TEMPORAL_TASK_QUEUE` environment variables, with the previous values as defaults.

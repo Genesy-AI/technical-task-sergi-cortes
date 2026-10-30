@@ -152,7 +152,7 @@ input --> trim --> empty?                     --> null (empty)
 
 ## Temporal integration
 
-Email verification follows the start-then-observe pattern from [decision 0002](../decisions/0002-start-then-observe-background-work.md), introduced by the [fix-email-verification-stall](../../openspec/changes/fix-email-verification-stall/design.md) change.
+Email verification follows the start-then-observe pattern from [decision 0002](../decisions/0002-start-then-observe-background-work.md), introduced by the [fix-email-verification-stall](../../openspec/changes/archive/2026-10-30-fix-email-verification-stall/design.md) change.
 
 ```mermaid
 sequenceDiagram

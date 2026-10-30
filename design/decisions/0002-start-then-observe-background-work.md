@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-10-30
-- **Related change:** [fix-email-verification-stall](../../openspec/changes/fix-email-verification-stall/design.md)
+- **Related change:** [fix-email-verification-stall](../../openspec/changes/archive/2026-10-30-fix-email-verification-stall/design.md)
 - **Related fix:** [FIX-002](../fixes/FIX-002-email-verification-stall.md)
 
 ## Decision

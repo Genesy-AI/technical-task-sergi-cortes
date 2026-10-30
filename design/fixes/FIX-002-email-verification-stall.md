@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Fix ID | FIX-002 |
-| OpenSpec change | [fix-email-verification-stall](../../openspec/changes/fix-email-verification-stall/proposal.md) |
+| OpenSpec change | [fix-email-verification-stall](../../openspec/changes/archive/2026-10-30-fix-email-verification-stall/proposal.md) |
 | Capability | `email-verification` |
 | Assessment findings | D1, A4, and A5 in [05-assessment.md](../architecture/05-assessment.md) |
 | Status | Resolved |
