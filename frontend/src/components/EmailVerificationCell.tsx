@@ -50,7 +50,7 @@ export const EmailVerificationCell: FC<EmailVerificationCellProps> = ({
           onClick={onRetry}
           disabled={isRetrying}
           aria-label="Retry verification"
-          className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-medium text-blue-600 hover:bg-blue-50 disabled:opacity-50"
+          className="inline-flex items-center gap-1 rounded px-1 font-medium text-blue-600 hover:bg-blue-50 disabled:opacity-50"
         >
           <IconRefresh className="h-3.5 w-3.5" aria-hidden />
           Retry

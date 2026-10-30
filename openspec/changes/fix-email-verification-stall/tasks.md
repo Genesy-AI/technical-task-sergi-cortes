@@ -42,9 +42,9 @@
 
 ## 8. End-to-end verification
 
-- [ ] 8.1 Repeat the scenario from 1.1 against `temporal server start-dev`, and verify the request returns at once, the other lead becomes verified, and Jane Smith becomes failed within 30 seconds, recording a screenshot in the fix document
-- [ ] 8.2 Close the page during a verification, reopen it, and verify the recorded outcome is shown
-- [ ] 8.3 Run all backend and frontend tests, type checks, and lint, and verify they pass
+- [x] 8.1 Repeat the scenario from 1.1 against `temporal server start-dev`, and verify the request returns at once, the other lead becomes verified, and Jane Smith becomes failed within 30 seconds, recording a screenshot in the fix document
+- [x] 8.2 Close the page during a verification, reopen it, and verify the recorded outcome is shown
+- [x] 8.3 Run all backend and frontend tests, type checks, and lint, and verify they pass
 
 ## Workflow follow-up
 

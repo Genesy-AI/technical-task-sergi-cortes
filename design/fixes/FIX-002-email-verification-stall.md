@@ -6,7 +6,7 @@
 | OpenSpec change | [fix-email-verification-stall](../../openspec/changes/fix-email-verification-stall/proposal.md) |
 | Capability | `email-verification` |
 | Assessment findings | D1, A4, and A5 in [05-assessment.md](../architecture/05-assessment.md) |
-| Status | Planned |
+| Status | Resolved |
 
 ## Symptom
 
@@ -72,3 +72,42 @@ activity: verifyEmail | attempt: 8 | maximumAttempts: 0 (unlimited) | lastFailur
 ```
 
 ![Leads table 60 seconds after starting verification](assets/FIX-002/before-after-60s.png)
+
+### Verification after the fix (tasks 8.1 and 8.2)
+
+Re-ran the scenario with Playwright against `temporal server start-dev` on 2026-10-30.
+Michael Brown was already verified, because terminating the stuck workflow during the reproduction let the old request's loop continue, so Emily Johnson took his place.
+
+```text
+BEFORE  Jane Smith       | Verified
+BEFORE  Emily Johnson    | Not verified
+RESPONSE 202 after 63ms
+t=  7s | Jane Smith: Verifying        | Emily Johnson: Verified
+t= 17s | Jane Smith: Verifying        | Emily Johnson: Verified
+t= 22s | Jane Smith: Couldn't verify  | Emily Johnson: Verified
+```
+
+- The request returned in 63 milliseconds, the toast read "Verification started for 2 leads", and the Enrich menu closed at once.
+- Emily Johnson was verified within seconds, without waiting for Jane Smith.
+- Jane Smith ended as "Couldn't verify" with a Retry button about 22 seconds after the start, inside the 30-second bound.
+
+![Leads table right after starting verification](assets/FIX-002/after-started.png)
+
+![Leads table 35 seconds after starting verification](assets/FIX-002/after-35s.png)
+
+To check that outcomes do not depend on the client, the browser was closed right after clicking Retry for Jane Smith and reopened 30 seconds later.
+
+```text
+BEFORE   Couldn't verify Retry
+STARTED  Verifying
+CLOSED   browser, waiting 30s with no client open
+REOPENED Couldn't verify Retry
+
+$ temporal workflow list
+  Completed  verify-email-2  verifyEmailWorkflow  35 seconds ago
+  Completed  verify-email-2  verifyEmailWorkflow  1 minute ago
+```
+
+The second completed run of `verify-email-2` started and finished while no browser was open, and its outcome was shown on reopening.
+
+![Leads table after reopening](assets/FIX-002/after-reopened.png)
