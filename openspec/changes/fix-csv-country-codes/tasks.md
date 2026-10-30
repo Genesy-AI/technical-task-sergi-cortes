@@ -13,9 +13,9 @@
 
 ## 3. Country conversion module
 
-- [ ] 3.1 Add `i18n-iso-countries` pinned to major version 7, and verify installation with `pnpm install --frozen-lockfile`
-- [ ] 3.2 Write unit tests for every scenario in the `lead-country-code` spec for conversion, names, and blanks, including `Congo` and `Korea` as ambiguous, and verify they fail before implementation
-- [ ] 3.3 Implement the module with the resolution order and reverse name index from design.md, and verify all tests from 3.2 pass
+- [x] 3.1 Add `i18n-iso-countries` pinned to major version 7, and verify installation with `pnpm install --frozen-lockfile`
+- [x] 3.2 Write unit tests for every scenario in the `lead-country-code` spec for conversion, names, and blanks, including `Congo` and `Korea` as ambiguous, and verify they fail before implementation
+- [x] 3.3 Implement the module with the resolution order and reverse name index from design.md, and verify all tests from 3.2 pass
 
 ## 4. Import and preview
 
