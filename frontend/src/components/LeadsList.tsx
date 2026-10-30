@@ -357,8 +357,8 @@ export const LeadsList: FC = () => {
       <MessageTemplateModal
         isOpen={isMessageModalOpen}
         onClose={() => setIsMessageModalOpen(false)}
-        selectedLeadIds={selectedLeads}
-        selectedLeadsCount={selectedLeads.length}
+        selectedLeads={(leads.data ?? []).filter((lead) => selectedLeads.includes(lead.id))}
+        fields={fields.data?.fields ?? []}
       />
 
       <CsvImportModal isOpen={isImportModalOpen} onClose={() => setIsImportModalOpen(false)} />

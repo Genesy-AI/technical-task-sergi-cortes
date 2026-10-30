@@ -31,8 +31,8 @@
 
 ## 6. Message composition
 
-- [ ] 6.1 Drive the generator's allow-list from the registry and add generator tests for the new fields, and verify they pass
-- [ ] 6.2 Replace the chip row with the grouped searchable picker and add missing-field warnings, and verify with component tests for search, insertion, and counts
+- [x] 6.1 Drive the generator's allow-list from the registry and add generator tests for the new fields, and verify they pass
+- [x] 6.2 Replace the chip row with the grouped searchable picker and add missing-field warnings, and verify with component tests for search, insertion, and counts
 
 ## 7. Documentation
 

@@ -71,3 +71,35 @@ describe('GET /leads profile fields', () => {
     })
   })
 })
+
+describe('POST /leads/generate-messages with profile fields', () => {
+  it('renders years at company and phone from the role history', async () => {
+    await importRows([
+      { ...person, companyName: 'Acme', jobTitle: 'Engineer', yearsInRole: '3', phoneNumber: '555-0100-123' },
+      { ...person, companyName: 'Acme', jobTitle: 'Eng. Manager', yearsInRole: '2' },
+    ])
+    const [lead] = await listLeads()
+
+    const res = await request(app)
+      .post('/leads/generate-messages')
+      .send({ leadIds: [lead.id], template: '{yearsAtCompany} years at {companyName}, call {phone}' })
+
+    expect(res.body).toMatchObject({ generatedCount: 1, errors: [] })
+    const [updated] = await listLeads()
+    expect(updated.message).toBe('5 years at Acme, call 555-0100-123')
+  })
+
+  it('skips a lead missing a used field and reports it', async () => {
+    await importRows([{ ...person, companyName: 'Acme', jobTitle: 'Engineer' }])
+    const [lead] = await listLeads()
+
+    const res = await request(app)
+      .post('/leads/generate-messages')
+      .send({ leadIds: [lead.id], template: 'Call {phone}' })
+
+    expect(res.body).toMatchObject({
+      generatedCount: 0,
+      errors: [{ leadId: lead.id, error: 'Missing required field: phone' }],
+    })
+  })
+})

@@ -1,41 +1,29 @@
-export interface Lead {
-  firstName: string
-  lastName?: string | null
-  email?: string | null
-  jobTitle?: string | null
-  companyName?: string | null
-  countryCode?: string | null
-}
+import { TEMPLATE_FIELD_KEYS } from '../leads/leadFields'
 
+/**
+ * The values a template can reference, keyed by registry field key.
+ * Callers pass the lead view, which includes derived values such as `yearsAtCompany`.
+ */
+export type Lead = Readonly<Record<string, unknown>>
+
+const PLACEHOLDER = /\{(\w+)\}/g
+
+/**
+ * Replaces each `{field}` with the lead's value.
+ * Throws for a field that is not templatable in the lead field registry, or that the lead has no value for,
+ * so the caller can skip that lead and report why.
+ */
 export function generateMessageFromTemplate(template: string, lead: Lead): string {
-  let message = template
-
-  const availableFields = {
-    firstName: lead.firstName,
-    lastName: lead.lastName,
-    email: lead.email,
-    jobTitle: lead.jobTitle,
-    companyName: lead.companyName,
-    countryCode: lead.countryCode,
-  }
-
-  const templateVariables = template.match(/\{(\w+)\}/g) || []
-
-  for (const variable of templateVariables) {
-    const fieldName = variable.slice(1, -1)
-
-    if (fieldName in availableFields) {
-      const fieldValue = availableFields[fieldName as keyof typeof availableFields]
-
-      if (fieldValue === null || fieldValue === undefined || fieldValue === '') {
-        throw new Error(`Missing required field: ${fieldName}`)
-      }
-
-      message = message.replace(new RegExp(`\\{${fieldName}\\}`, 'g'), fieldValue)
-    } else {
+  for (const [, fieldName] of template.matchAll(PLACEHOLDER)) {
+    if (!TEMPLATE_FIELD_KEYS.has(fieldName)) {
       throw new Error(`Unknown field in template: ${fieldName}`)
+    }
+    const value = lead[fieldName]
+    if (value === null || value === undefined || value === '') {
+      throw new Error(`Missing required field: ${fieldName}`)
     }
   }
 
-  return message
+  // A replacer function inserts values literally, so `$&` or `$1` in a value is not treated as a pattern.
+  return template.replace(PLACEHOLDER, (_match, fieldName: string) => String(lead[fieldName]))
 }

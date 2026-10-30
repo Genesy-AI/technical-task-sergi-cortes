@@ -166,13 +166,17 @@ export function createApp(
     }
 
     try {
-      const leads = await prisma.lead.findMany({
-        where: {
-          id: {
-            in: leadIds.map((id) => Number(id)),
+      // The lead view includes derived values such as yearsAtCompany, so templates can use them.
+      const leads = (
+        await prisma.lead.findMany({
+          where: {
+            id: {
+              in: leadIds.map((id) => Number(id)),
+            },
           },
-        },
-      })
+          include: withRoles,
+        })
+      ).map(toLeadView)
 
       if (leads.length === 0) {
         return res.status(404).json({ error: 'No leads found with the provided IDs' })
