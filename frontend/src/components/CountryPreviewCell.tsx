@@ -10,7 +10,9 @@ interface CountryPreviewCellProps {
 }
 
 const Note: FC<{ tone: 'muted' | 'warning'; children: string }> = ({ tone, children }) => (
-  <div className={`text-xs ${tone === 'warning' ? 'text-amber-700' : 'text-gray-500'}`}>{children}</div>
+  <div className={`text-xs whitespace-nowrap ${tone === 'warning' ? 'text-amber-700' : 'text-gray-500'}`}>
+    {children}
+  </div>
 )
 
 /** Shows the country the import will store for one CSV row, and why it differs from the file when it does. */
@@ -35,14 +37,8 @@ export const CountryPreviewCell: FC<CountryPreviewCellProps> = ({ value, result,
     )
   }
 
-  if (result.outcome === 'cleared') {
-    return (
-      <>
-        <div className="text-gray-400">-</div>
-        <Note tone="warning">{`${value} not recognized, left blank`}</Note>
-      </>
-    )
-  }
+  // The note itself says the country stays blank, so no placeholder dash is shown above it.
+  if (result.outcome === 'cleared') return <Note tone="warning">{`${value} not recognized, left blank`}</Note>
 
   return (
     <>

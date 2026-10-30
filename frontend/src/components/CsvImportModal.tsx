@@ -329,11 +329,15 @@ export const CsvImportModal: FC<CsvImportModalProps> = ({ isOpen, onClose }) => 
                             </span>
                           )}
                         </td>
-                        <td className="px-3 py-2 text-sm text-gray-900">
+                        <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
                           {lead.firstName} {lead.lastName || ''}
                         </td>
-                        <td className="px-3 py-2 text-sm text-gray-900">{lead.email || '-'}</td>
-                        <td className="px-3 py-2 text-sm text-gray-900">{lead.companyName || '-'}</td>
+                        <td className="px-3 py-2 text-sm text-gray-900">
+                          {lead.email || <span className="text-gray-400">-</span>}
+                        </td>
+                        <td className="px-3 py-2 text-sm text-gray-900">
+                          {lead.companyName || <span className="text-gray-400">-</span>}
+                        </td>
                         <td className="px-3 py-2 text-sm text-gray-900">
                           <CountryPreviewCell
                             value={lead.countryCode}

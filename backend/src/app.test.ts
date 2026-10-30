@@ -18,7 +18,9 @@ describe('GET /leads', () => {
   })
 
   it('returns stored leads', async () => {
-    await db.prisma.lead.create({ data: { firstName: 'Ada', lastName: 'Lovelace', email: 'ada@example.com' } })
+    await db.prisma.lead.create({
+      data: { firstName: 'Ada', lastName: 'Lovelace', email: 'ada@example.com' },
+    })
 
     const res = await request(app).get('/leads')
 

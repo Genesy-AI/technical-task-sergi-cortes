@@ -6,7 +6,7 @@
 | OpenSpec change | [fix-csv-country-codes](../../openspec/changes/fix-csv-country-codes/proposal.md) |
 | Capability | `lead-country-code` |
 | Assessment finding | D2 in [05-assessment.md](../architecture/05-assessment.md) |
-| Status | Planned |
+| Status | Resolved |
 
 ## Symptom
 
@@ -71,6 +71,20 @@ Applied: 0 lead country value(s) changed.
 ```
 
 The binary `dev.db` in this change differs from `main` only by this one value.
+
+### Verification after the fix (task 7.1)
+
+Re-ran the same Playwright import of `docs/leads-with-errors.csv` against the fixed stack on 2026-10-30.
+
+- The preview has a Country column, shows "Converted from 12" next to `DZ` for Amanda James, and shows "XXX not recognized, left blank" for the cleared rows, which stay valid.
+- After import, the table shows `DZ` for Amanda James, blank for Latasha Martin and Linda Choi, and `GB` for the backfilled Emily Johnson.
+- The preview no longer shows red dashes for valid rows, and empty values use one consistent gray dash.
+
+![Import preview after the fix](assets/FIX-001/after-preview.png)
+
+![Import preview after the fix, scrolled to the converted row](assets/FIX-001/after-preview-scrolled.png)
+
+![Leads table after the fix](assets/FIX-001/after-table.png)
 
 ### Related observations outside this fix
 

@@ -38,8 +38,8 @@
 
 ## 7. End-to-end verification
 
-- [ ] 7.1 Import `docs/leads-with-errors.csv` through the UI again, and verify the preview notes and the table show only valid codes or blanks, recording a screenshot in the fix document
-- [ ] 7.2 Run all backend and frontend tests, type checks, and lint, and verify they pass
+- [x] 7.1 Import `docs/leads-with-errors.csv` through the UI again, and verify the preview notes and the table show only valid codes or blanks, recording a screenshot in the fix document
+- [x] 7.2 Run all backend and frontend tests, type checks, and lint, and verify they pass
 
 ## Workflow follow-up
 
