@@ -1,21 +1,26 @@
-import { FC, useState, useEffect, useCallback, useRef } from 'react'
+import { FC, useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { api } from '../api'
+import { LeadFieldDefinition } from '../api/types/leads/getFields'
+import { LeadsGetManyOutput } from '../api/types/leads/getMany'
+import { FieldPicker } from './FieldPicker'
+import { templateCoverage } from './templateCoverage'
 
 interface MessageTemplateModalProps {
   isOpen: boolean
   onClose: () => void
-  selectedLeadIds: number[]
-  selectedLeadsCount: number
+  selectedLeads: LeadsGetManyOutput
+  /** The lead field registry; templatable fields are offered and checked. */
+  fields: readonly LeadFieldDefinition[]
 }
 
 export const MessageTemplateModal: FC<MessageTemplateModalProps> = ({
   isOpen,
   onClose,
-  selectedLeadIds,
-  selectedLeadsCount,
+  selectedLeads,
+  fields,
 }) => {
   const [template, setTemplate] = useState('')
   const [generationResult, setGenerationResult] = useState<{
@@ -25,6 +30,12 @@ export const MessageTemplateModal: FC<MessageTemplateModalProps> = ({
   } | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const queryClient = useQueryClient()
+  const selectedLeadIds = selectedLeads.map((lead) => lead.id)
+  const selectedLeadsCount = selectedLeads.length
+  const coverage = useMemo(
+    () => templateCoverage(template, fields, selectedLeads),
+    [template, fields, selectedLeads]
+  )
 
   const generateMessagesMutation = useMutation({
     mutationFn: async (data: { leadIds: number[]; template: string }) => api.leads.generateMessages(data),
@@ -106,8 +117,6 @@ export const MessageTemplateModal: FC<MessageTemplateModalProps> = ({
     }
   }, [isOpen, handleClose])
 
-  const availableFields = ['firstName', 'lastName', 'email', 'jobTitle', 'companyName', 'countryCode']
-
   const insertField = (field: string) => {
     if (textareaRef.current) {
       const textarea = textareaRef.current
@@ -156,19 +165,7 @@ export const MessageTemplateModal: FC<MessageTemplateModalProps> = ({
                 Message Template
               </label>
               <div className="space-y-3">
-                <div className="flex flex-wrap gap-2">
-                  <span className="text-sm text-gray-600">Insert field:</span>
-                  {availableFields.map((field) => (
-                    <button
-                      key={field}
-                      type="button"
-                      onClick={() => insertField(field)}
-                      className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded hover:bg-blue-200 transition-colors"
-                    >
-                      {`{${field}}`}
-                    </button>
-                  ))}
-                </div>
+                <FieldPicker fields={fields} onInsert={insertField} />
                 <textarea
                   ref={textareaRef}
                   id="message-template"
@@ -184,6 +181,24 @@ export const MessageTemplateModal: FC<MessageTemplateModalProps> = ({
                 field is missing for a lead, an error will be shown and no message will be generated for that
                 lead.
               </p>
+              {(coverage.unknown.length > 0 || coverage.missing.length > 0) && (
+                <div
+                  role="status"
+                  aria-label="Template warnings"
+                  className="mt-3 space-y-1 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800"
+                >
+                  {coverage.unknown.map((key) => (
+                    <p key={key}>{`{${key}} is not a known field.`}</p>
+                  ))}
+                  {coverage.missing.map((field) => (
+                    <p key={field.key}>
+                      {`${field.label} is missing in ${field.missing} of ${field.total} selected ${
+                        field.total === 1 ? 'lead' : 'leads'
+                      }, which will not get a message.`}
+                    </p>
+                  ))}
+                </div>
+              )}
             </div>
 
             {generationResult && (

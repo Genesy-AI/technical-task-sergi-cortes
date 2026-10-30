@@ -32,7 +32,7 @@ describe('GET /leads', () => {
   it('reports an imported lead as unverified', async () => {
     await request(app)
       .post('/leads/bulk')
-      .send({ leads: [{ firstName: 'Ada', lastName: 'Lovelace', email: 'ada@example.com' }] })
+      .send({ rows: [{ firstName: 'Ada', lastName: 'Lovelace', email: 'ada@example.com' }] })
 
     const res = await request(app).get('/leads')
 

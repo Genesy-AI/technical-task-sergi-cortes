@@ -1,10 +1,13 @@
-import { FC, useState, useRef, useCallback, useMemo, useEffect } from 'react'
+import { FC, useState, useRef, useCallback, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { api } from '../api'
-import { CsvLead, parseCsv } from '../utils/csvParser'
-import { CountryPreviewCell } from './CountryPreviewCell'
+import { CsvRow } from '../api/types/leads/importPreview'
+import { readCsvRows } from '../utils/csvParser'
+import { ImportPreviewTable } from './ImportPreviewTable'
+
+const leadsLabel = (count: number) => (count === 1 ? `${count} lead` : `${count} leads`)
 
 interface CsvImportModalProps {
   isOpen: boolean
@@ -12,53 +15,25 @@ interface CsvImportModalProps {
 }
 
 export const CsvImportModal: FC<CsvImportModalProps> = ({ isOpen, onClose }) => {
-  const [csvData, setCsvData] = useState<CsvLead[]>([])
+  const [file, setFile] = useState<{ name: string; rows: CsvRow[]; loadedAt: number } | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const queryClient = useQueryClient()
 
-  const stats = useMemo(() => {
-    const validLeads = csvData.filter((lead) => lead.isValid)
-    const invalidLeads = csvData.filter((lead) => !lead.isValid)
-
-    const duplicateGroups = new Map<string, CsvLead[]>()
-    validLeads.forEach((lead) => {
-      const key = `${lead.firstName.toLowerCase()}_${(lead.lastName || '').toLowerCase()}`
-      if (!duplicateGroups.has(key)) {
-        duplicateGroups.set(key, [])
-      }
-      duplicateGroups.get(key)!.push(lead)
-    })
-
-    const duplicatesInCsv = Array.from(duplicateGroups.values())
-      .filter((group) => group.length > 1)
-      .flat()
-
-    return {
-      total: csvData.length,
-      valid: validLeads.length,
-      invalid: invalidLeads.length,
-      duplicatesInCsv: duplicatesInCsv.length,
-    }
-  }, [csvData])
-
-  // The backend owns country conversion, so the preview asks it what each distinct value will become.
-  const distinctCountries = useMemo(
-    () => [...new Set(csvData.map((lead) => lead.countryCode).filter((value): value is string => !!value))],
-    [csvData]
-  )
-  const countryPreview = useQuery({
-    queryKey: ['leads', 'normalizeCountryCodes', distinctCountries],
-    queryFn: () => api.leads.normalizeCountryCodes({ values: distinctCountries }),
-    enabled: distinctCountries.length > 0,
+  // The backend maps, groups, and validates rows, so the preview shows exactly what the import will store.
+  const preview = useQuery({
+    queryKey: ['leads', 'importPreview', file?.name, file?.loadedAt],
+    queryFn: () => api.leads.importPreview({ rows: file!.rows }),
+    enabled: file !== null,
     staleTime: Infinity,
     retry: false,
   })
-  const countryResults = useMemo(
-    () => new Map(countryPreview.data?.results.map((result) => [result.value, result])),
-    [countryPreview.data]
-  )
+  const plan = preview.data
+  const newLeads = plan?.leads.filter((lead) => lead.status === 'new').length ?? 0
+  const existingLeads = plan?.leads.filter((lead) => lead.status === 'duplicate').length ?? 0
+
+  const clearFile = () => setFile(null)
 
   const handleFileSelect = (file: File) => {
     if (!file.name.endsWith('.csv')) {
@@ -71,8 +46,7 @@ export const CsvImportModal: FC<CsvImportModalProps> = ({ isOpen, onClose }) => 
     reader.onload = (e) => {
       try {
         const content = e.target?.result as string
-        const parsed = parseCsv(content)
-        setCsvData(parsed)
+        setFile({ name: file.name, rows: readCsvRows(content), loadedAt: Date.now() })
         setIsProcessing(false)
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Failed to parse CSV file'
@@ -108,34 +82,16 @@ export const CsvImportModal: FC<CsvImportModalProps> = ({ isOpen, onClose }) => 
   }, [])
 
   const importMutation = useMutation({
-    mutationFn: async (leads: CsvLead[]) => {
-      const validLeads = leads.filter((lead) => lead.isValid)
-
-      const leadsToImport = validLeads.map((lead) => ({
-        firstName: lead.firstName,
-        lastName: lead.lastName,
-        email: lead.email,
-        jobTitle: lead.jobTitle || undefined,
-        countryCode: lead.countryCode || undefined,
-        companyName: lead.companyName || undefined,
-      }))
-
-      return api.leads.bulkImport({ leads: leadsToImport })
-    },
+    mutationFn: async (rows: CsvRow[]) => api.leads.bulkImport({ rows }),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['leads', 'getMany'] })
 
-      let message = `Successfully imported ${data.importedCount} leads!`
-      if (data.duplicatesSkipped > 0) {
-        message += ` (${data.duplicatesSkipped} duplicates skipped)`
-      }
-      if (data.invalidLeads > 0) {
-        message += ` (${data.invalidLeads} invalid leads excluded)`
-      }
-
+      let message = `Successfully imported ${leadsLabel(data.importedCount)}`
+      if (data.duplicatesSkipped > 0) message += ` (${data.duplicatesSkipped} already existed)`
+      if (data.invalidRows > 0) message += ` (${data.invalidRows} invalid rows excluded)`
       toast.success(message)
       onClose()
-      setCsvData([])
+      clearFile()
     },
     onError: () => {
       toast.error('Error importing leads. Please try again.')
@@ -143,16 +99,12 @@ export const CsvImportModal: FC<CsvImportModalProps> = ({ isOpen, onClose }) => 
   })
 
   const handleImport = () => {
-    if (stats.valid === 0) {
-      toast.error('No valid leads to import')
-      return
-    }
-    importMutation.mutate(csvData)
+    if (file && newLeads > 0) importMutation.mutate(file.rows)
   }
 
   const handleClose = useCallback(() => {
     if (!importMutation.isPending) {
-      setCsvData([])
+      clearFile()
       onClose()
     }
   }, [importMutation.isPending, onClose])
@@ -208,7 +160,7 @@ export const CsvImportModal: FC<CsvImportModalProps> = ({ isOpen, onClose }) => 
         </div>
 
         <div className="px-6 py-4">
-          {csvData.length === 0 ? (
+          {file === null ? (
             <div
               className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
                 isDragging ? 'border-blue-400 bg-blue-50' : 'border-gray-300'
@@ -255,8 +207,12 @@ export const CsvImportModal: FC<CsvImportModalProps> = ({ isOpen, onClose }) => 
                     </button>
                   </p>
                   <p className="text-sm text-gray-500">
-                    CSV must include: firstName, lastName, email (required). Optional: jobTitle, countryCode,
-                    companyName
+                    CSV must include: firstName, lastName, email (required). Optional: jobTitle, companyName,
+                    countryCode, phoneNumber, linkedinUrl, yearsInRole, isCurrentRole
+                  </p>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Rows with the same email become one person with several roles. The last row is the current
+                    role unless isCurrentRole marks another.
                   </p>
                   <p className="mt-1 text-sm text-gray-500">
                     Country accepts ISO codes such as ES, ESP, or 724, or an English name. Unrecognized values
@@ -267,105 +223,44 @@ export const CsvImportModal: FC<CsvImportModalProps> = ({ isOpen, onClose }) => 
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="text-sm font-medium text-gray-900 mb-3">Import Summary</h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="bg-white rounded p-3 text-center">
-                    <div className="text-lg font-semibold text-gray-900">{stats.total}</div>
-                    <div className="text-xs text-gray-500">Total Rows</div>
-                  </div>
-                  <div className="bg-white rounded p-3 text-center">
-                    <div className="text-lg font-semibold text-green-600">{stats.valid}</div>
-                    <div className="text-xs text-gray-500">Valid Leads</div>
-                  </div>
-                  <div className="bg-white rounded p-3 text-center">
-                    <div className="text-lg font-semibold text-red-600">{stats.invalid}</div>
-                    <div className="text-xs text-gray-500">Invalid Leads</div>
-                  </div>
-                  <div className="bg-white rounded p-3 text-center">
-                    <div className="text-lg font-semibold text-yellow-600">{stats.duplicatesInCsv}</div>
-                    <div className="text-xs text-gray-500">Duplicates in CSV</div>
-                  </div>
+              {preview.isPending && (
+                <div className="flex items-center gap-3 py-8 justify-center text-gray-600">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                  Checking {file.name}...
                 </div>
-              </div>
-
-              <div className="border border-gray-200 rounded-lg max-h-96 overflow-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50 sticky top-0">
-                    <tr>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Row</th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                        Status
-                      </th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                        Name
-                      </th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                        Email
-                      </th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                        Company
-                      </th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                        Country
-                      </th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                        Errors
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {csvData.map((lead, index) => (
-                      <tr key={index} className={lead.isValid ? 'bg-white' : 'bg-red-50'}>
-                        <td className="px-3 py-2 text-sm text-gray-900">{lead.rowIndex - 1}</td>
-                        <td className="px-3 py-2">
-                          {lead.isValid ? (
-                            <span className="inline-flex px-2 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full">
-                              Valid
-                            </span>
-                          ) : (
-                            <span className="inline-flex px-2 py-1 text-xs font-semibold text-red-800 bg-red-100 rounded-full">
-                              Invalid
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
-                          {lead.firstName} {lead.lastName || ''}
-                        </td>
-                        <td className="px-3 py-2 text-sm text-gray-900">
-                          {lead.email || <span className="text-gray-400">-</span>}
-                        </td>
-                        <td className="px-3 py-2 text-sm text-gray-900">
-                          {lead.companyName || <span className="text-gray-400">-</span>}
-                        </td>
-                        <td className="px-3 py-2 text-sm text-gray-900">
-                          <CountryPreviewCell
-                            value={lead.countryCode}
-                            result={lead.countryCode ? countryResults.get(lead.countryCode) : undefined}
-                            status={countryPreview.status}
-                          />
-                        </td>
-                        <td className="px-3 py-2 text-sm">
-                          {lead.errors.length > 0 ? (
-                            <span className="text-red-600">{lead.errors.join(', ')}</span>
-                          ) : (
-                            <span className="text-gray-400">-</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              )}
+              {preview.isError && (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                  Could not check this file. Please try again.
+                </div>
+              )}
+              {plan && (
+                <>
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h4 className="text-sm font-medium text-gray-900 mb-3">Import Summary</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <SummaryTile value={plan.totalRows} label="Total Rows" className="text-gray-900" />
+                      <SummaryTile value={newLeads} label="Leads to Import" className="text-green-600" />
+                      <SummaryTile
+                        value={plan.invalidRows.length}
+                        label="Invalid Rows"
+                        className="text-red-600"
+                      />
+                      <SummaryTile value={existingLeads} label="Already Exist" className="text-amber-600" />
+                    </div>
+                  </div>
+                  <ImportPreviewTable leads={plan.leads} invalidRows={plan.invalidRows} />
+                </>
+              )}
             </div>
           )}
         </div>
 
-        {csvData.length > 0 && (
+        {file !== null && (
           <div className="px-6 py-4 border-t border-gray-200 flex justify-between">
             <div className="flex space-x-3">
               <button
-                onClick={() => setCsvData([])}
+                onClick={clearFile}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 Clear Data
@@ -380,10 +275,12 @@ export const CsvImportModal: FC<CsvImportModalProps> = ({ isOpen, onClose }) => 
               </button>
               <button
                 onClick={handleImport}
-                disabled={stats.valid === 0 || importMutation.isPending}
+                disabled={!plan || newLeads === 0 || importMutation.isPending}
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {importMutation.isPending ? 'Importing...' : `Import ${stats.valid} Valid Leads`}
+                {importMutation.isPending
+                  ? 'Importing...'
+                  : `Import ${newLeads} ${newLeads === 1 ? 'Lead' : 'Leads'}`}
               </button>
             </div>
           </div>
@@ -394,3 +291,14 @@ export const CsvImportModal: FC<CsvImportModalProps> = ({ isOpen, onClose }) => 
 
   return createPortal(modalContent, document.body)
 }
+
+const SummaryTile: FC<{ value: number; label: string; className: string }> = ({
+  value,
+  label,
+  className,
+}) => (
+  <div className="bg-white rounded p-3 text-center">
+    <div className={`text-lg font-semibold ${className}`}>{value}</div>
+    <div className="text-xs text-gray-500">{label}</div>
+  </div>
+)

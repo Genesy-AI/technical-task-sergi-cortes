@@ -1,6 +1,6 @@
 # 0001 - The backend owns country code conversion
 
-- **Status:** Accepted
+- **Status:** Accepted; the preview endpoint was replaced by the whole-file import preview in [0004](0004-backend-computes-the-import-plan.md)
 - **Date:** 2026-10-30
 - **Related change:** [fix-csv-country-codes](../../openspec/changes/archive/2026-10-30-fix-csv-country-codes/design.md)
 - **Related fix:** [FIX-001](../fixes/FIX-001-csv-country-codes.md)

@@ -14,11 +14,34 @@ model lead {
   firstName   String
   lastName    String
   email       String
+  /// Copy of the current role's job title, kept in sync on import.
   jobTitle    String?
   countryCode String?
+  /// Copy of the current role's company, kept in sync on import.
   companyName String?
   message     String?
   emailVerificationStatus EmailVerificationStatus @default(UNVERIFIED)
+  /// Cleaned phone text with an optional extension, such as `(731)123-9702`.
+  phone       String?
+  /// Canonical `https://www.linkedin.com/in/<slug>` profile URL.
+  linkedinUrl String?
+  roles       leadRole[]
+}
+
+/// One role a lead has held, in file order; exactly one per lead is current.
+model leadRole {
+  id          Int      @id @default(autoincrement())
+  leadId      Int
+  lead        lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  /// 0-based order in which the roles appeared in the import file.
+  position    Int
+  jobTitle    String?
+  companyName String?
+  /// Whole years in this role, from 0 to 80.
+  yearsInRole Int?
+  isCurrent   Boolean  @default(false)
+
+  @@unique([leadId, position])
 }
 
 /// Every lead's email ends in exactly one of these after verification starts.

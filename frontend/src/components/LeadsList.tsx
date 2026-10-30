@@ -6,6 +6,9 @@ import { MessageTemplateModal } from './MessageTemplateModal'
 import { CsvImportModal } from './CsvImportModal'
 import { EmailVerificationCell } from './EmailVerificationCell'
 import { pollIntervalFor } from './leadsPolling'
+import { ColumnMenu } from './ColumnMenu'
+import { useColumnVisibility } from './columnVisibility'
+import { LeadsTable } from './LeadsTable'
 
 const leadsLabel = (count: number) => (count === 1 ? `${count} lead` : `${count} leads`)
 
@@ -15,6 +18,13 @@ export const LeadsList: FC = () => {
   const [isEnrichDropdownOpen, setIsEnrichDropdownOpen] = useState(false)
   const [isImportModalOpen, setIsImportModalOpen] = useState(false)
   const queryClient = useQueryClient()
+
+  const fields = useQuery({
+    queryKey: ['leads', 'fields'],
+    queryFn: async () => api.leads.getFields(),
+    staleTime: Infinity,
+  })
+  const columns = useColumnVisibility(fields.data?.fields)
 
   const leads = useQuery({
     queryKey: ['leads', 'getMany'],
@@ -82,14 +92,6 @@ export const LeadsList: FC = () => {
     }
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    })
-  }
-
   if (leads.isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -97,9 +99,6 @@ export const LeadsList: FC = () => {
       </div>
     )
   }
-
-  const isAllSelected = leads.data && selectedLeads.length === leads.data.length
-  const isIndeterminate = selectedLeads.length > 0 && selectedLeads.length < (leads.data?.length || 0)
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col h-[calc(100vh-12rem)]">
@@ -112,6 +111,12 @@ export const LeadsList: FC = () => {
                 {selectedLeads.length} selected
               </span>
             )}
+
+            <ColumnMenu
+              columns={columns.allColumns}
+              isVisible={columns.isVisible}
+              onToggle={columns.toggle}
+            />
 
             <button
               onClick={() => setIsImportModalOpen(true)}
@@ -301,115 +306,23 @@ export const LeadsList: FC = () => {
 
       <div className="flex-1 overflow-hidden">
         <div className="h-full overflow-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50 sticky top-0 z-10">
-              <tr>
-                <th scope="col" className="w-12 px-6 py-3 bg-gray-50">
-                  <input
-                    type="checkbox"
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    checked={isAllSelected}
-                    ref={(el) => {
-                      if (el) el.indeterminate = isIndeterminate
-                    }}
-                    onChange={(e) => handleSelectAll(e.target.checked)}
-                  />
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50"
-                >
-                  Name
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50"
-                >
-                  Email
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50"
-                >
-                  Job Title
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50"
-                >
-                  Company
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50"
-                >
-                  Country
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50"
-                >
-                  Message
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50"
-                >
-                  Created
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {!leads.isError &&
-                leads.data?.map((lead) => (
-                  <tr
-                    key={lead.id}
-                    className={`hover:bg-gray-50 transition-colors ${
-                      selectedLeads.includes(lead.id) ? 'bg-blue-50' : ''
-                    }`}
-                  >
-                    <td className="w-12 px-6 py-4">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                        checked={selectedLeads.includes(lead.id)}
-                        onChange={(e) => handleSelectLead(lead.id, e.target.checked)}
-                      />
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {lead.firstName} {lead.lastName || ''}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <EmailVerificationCell
-                        email={lead.email}
-                        status={lead.emailVerificationStatus}
-                        onRetry={() => startVerification([lead.id])}
-                        isRetrying={verifyEmailsMutation.isPending}
-                      />
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{lead.jobTitle || '-'}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{lead.companyName || '-'}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{lead.countryCode || '-'}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900 max-w-xs truncate" title={lead.message || ''}>
-                        {lead.message || '-'}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(lead.createdAt)}
-                    </td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
+          {!leads.isError && (
+            <LeadsTable
+              leads={leads.data ?? []}
+              columns={columns.visibleColumns}
+              selectedLeads={selectedLeads}
+              onSelectAll={handleSelectAll}
+              onSelectLead={handleSelectLead}
+              renderEmail={(lead) => (
+                <EmailVerificationCell
+                  email={lead.email}
+                  status={lead.emailVerificationStatus}
+                  onRetry={() => startVerification([lead.id])}
+                  isRetrying={verifyEmailsMutation.isPending}
+                />
+              )}
+            />
+          )}
 
           {leads.isError && (
             <div className="text-center py-12">
@@ -444,8 +357,8 @@ export const LeadsList: FC = () => {
       <MessageTemplateModal
         isOpen={isMessageModalOpen}
         onClose={() => setIsMessageModalOpen(false)}
-        selectedLeadIds={selectedLeads}
-        selectedLeadsCount={selectedLeads.length}
+        selectedLeads={(leads.data ?? []).filter((lead) => selectedLeads.includes(lead.id))}
+        fields={fields.data?.fields ?? []}
       />
 
       <CsvImportModal isOpen={isImportModalOpen} onClose={() => setIsImportModalOpen(false)} />

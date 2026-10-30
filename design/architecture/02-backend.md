@@ -14,12 +14,15 @@ flowchart TB
     end
     subgraph app.ts
         CORS[CORS middleware, json parser]
-        ROUTES[10 route handlers<br/>validation + business logic + persistence]
+        ROUTES[12 route handlers<br/>validation + business logic + persistence]
     end
     BOOT -- "createApp(prisma)" --> ROUTES
     MSG[utils/messageGenerator.ts]
     CC[utils/countryCode.ts]
-    ROUTES --> CC
+    LEADS[leads/<br/>leadFields registry, values, importLeads, importStore, leadView]
+    ROUTES --> LEADS
+    LEADS --> CC
+    MSG --> LEADS
     WF[workflows/workflows.ts<br/>verifyEmailWorkflow]
     ACT[workflows/activities<br/>verifyEmail, saveVerificationResult]
     WORKER[worker.ts]
@@ -42,10 +45,20 @@ Each route handler parses the body, validates it by hand, calls Prisma directly,
 
 ## Data model
 
-The database has a single table.
+The database has a lead table and its role history.
 
 ```mermaid
 erDiagram
+    lead ||--o{ leadRole : "has, in file order"
+    leadRole {
+        Int id PK
+        Int leadId FK "cascade delete"
+        Int position "0-based file order, unique per lead"
+        String jobTitle "nullable"
+        String companyName "nullable"
+        Int yearsInRole "nullable, 0 to 80"
+        Boolean isCurrent "exactly one per lead"
+    }
     lead {
         Int id PK "autoincrement"
         DateTime createdAt "default now()"
@@ -58,15 +71,19 @@ erDiagram
         String companyName "nullable"
         String message "nullable, last generated message"
         EmailVerificationStatus emailVerificationStatus "UNVERIFIED, PENDING, VERIFIED, INVALID, FAILED"
+        String phone "nullable, cleaned text with optional extension"
+        String linkedinUrl "nullable, canonical https://www.linkedin.com/in/slug"
     }
 ```
 
+- `lead.jobTitle` and `lead.companyName` are copies of the current role, written in the same create, so existing reads keep working.
+- Years in role and years at company are not stored on the lead: `toLeadView` in `backend/src/leads/leadView.ts` derives them from the roles on every read.
+
 - The Prisma model name is lowercase `lead`, which is unusual for Prisma conventions.
-- There are no indexes or unique constraints beyond the primary key, so email duplicates are allowed.
+- There are no indexes or unique constraints beyond the primary key and `leadRole(leadId, position)`; the import prevents email duplicates, the database does not.
 - `message` stores only the latest generated message, so history is lost on every generation.
 - `emailVerificationStatus` is an enum that defaults to `UNVERIFIED`, and `PENDING` drives the table's polling.
 - Phone enrichment state has no representation in the model yet, and is planned in the `enrich-lead-phone` change.
-- The sample CSVs already carry `yearsInRole` and `phoneNumber` columns that the model does not have.
 
 ### Migrations
 
@@ -77,6 +94,7 @@ erDiagram
 | `20250904134219_make_last_name_email_required` | Rebuilds the table to make `lastName` and `email` required. |
 | `20250905104559_add_email_verified_column` | Adds `emailVerified` with default `NULL`. |
 | `20261030090000_replace_email_verified_with_status` | Replaces `emailVerified` with `emailVerificationStatus`, mapping true to `VERIFIED`, false to `INVALID`, and null to `UNVERIFIED`. |
+| `20261030100000_add_lead_profile_and_roles` | Adds `phone` and `linkedinUrl`, creates `leadRole`, and gives every existing lead one current role copied from its job title and company. |
 
 The datasource URL is hardcoded in `schema.prisma` and the `dev.db` file is committed, so local data is shared through git.
 
@@ -89,13 +107,14 @@ None are authenticated, rate limited, or paginated.
 | --- | --- | --- | --- | --- |
 | `POST` | `/leads` | Create one lead | `{ name, lastName, email }` | Created lead |
 | `GET` | `/leads/:id` | Read one lead | - | Lead, or `null` with status 200 when missing |
-| `GET` | `/leads` | List all leads | - | Array of leads, unpaginated |
+| `GET` | `/leads` | List all leads | - | Array of leads with `roles`, `yearsInRole`, and `yearsAtCompany`, unpaginated |
+| `GET` | `/leads/fields` | Describe the lead fields | - | `{ fields: [{ key, label, group, type, templatable, column }] }` |
 | `PATCH` | `/leads/:id` | Update name and email | `{ name, email }` | Updated lead |
 | `DELETE` | `/leads/:id` | Delete one lead | - | Empty |
 | `DELETE` | `/leads` | Delete many leads | `{ ids: number[] }` | `{ deletedCount }` |
 | `POST` | `/leads/generate-messages` | Render a template for many leads | `{ leadIds, template }` | `{ success, generatedCount, errors[] }` |
-| `POST` | `/leads/bulk` | Import many leads from parsed CSV | `{ leads[] }` | `{ success, importedCount, duplicatesSkipped, invalidLeads, errors[] }` |
-| `POST` | `/leads/country-codes/normalize` | Preview how country values will be stored | `{ values: string[] }`, at most 1000 values of at most 100 characters | `{ results: [{ value, code, outcome }] }` |
+| `POST` | `/leads/import/preview` | Show what an import of these CSV rows would store | `{ rows[] }` with headers as written, at most 5000 | `{ totalRows, leads[], invalidRows[] }` |
+| `POST` | `/leads/bulk` | Import CSV rows | `{ rows[] }` with headers as written, at most 5000 | `{ success, importedCount, duplicatesSkipped, invalidRows, errors[] }` |
 | `POST` | `/leads/verify-emails` | Start background email verification | `{ leadIds }`, at most 500 positive integers | `202 { started[], failed[{ leadId, error }] }`, or 404 when no id matches |
 
 ### Handler patterns
@@ -110,16 +129,18 @@ None are authenticated, rate limited, or paginated.
 
 ### Bulk import logic
 
-The `/leads/bulk` handler runs these steps.
+`buildImport` in `backend/src/leads/importLeads.ts` turns raw CSV rows into an import plan, as described in [decision 0004](../decisions/0004-backend-computes-the-import-plan.md).
+`POST /leads/import/preview` returns the plan and `POST /leads/bulk` executes it, so they cannot disagree.
 
-1. Filter rows that have non-empty string `firstName`, `lastName`, and `email`.
-2. Query existing leads with an `OR` of `firstName AND lastName` pairs.
-3. Drop incoming rows whose lowercase `firstName_lastName` key already exists in the database.
-4. Insert remaining rows one at a time, trimming strings and storing optional fields as `null`.
+1. Map each header to a registry field by lowercasing it and keeping only letters, so `Years In Role` and `phone` both resolve.
+2. Skip blank rows, and reject rows without first name, last name, or a well-formed email, with reasons.
+3. Group the remaining rows by lowercased email; each row becomes one role of that person, and identical roles are merged so years are not counted twice.
+4. Take person-level values (names, phone, LinkedIn, country) from the first non-blank row, and note rows that disagree.
+5. Mark the current role: the last row with `isCurrentRole`, else the last row in file order.
+6. Mark people whose email already exists, ignoring case, as duplicates to skip.
 
-Duplicates are detected by name only, not by email.
-Duplicates inside the same CSV are not removed, because the key set is built from the database only.
-`countryCode` is converted to an ISO 3166-1 alpha-2 code, or stored as `null` when it cannot be converted, as described below.
+`executeImport` in `backend/src/leads/importStore.ts` creates each new person with their roles in one write.
+Every value is validated through the registry; an invalid phone, LinkedIn URL, years value, or country is stored blank with a preview note, and the row is still imported.
 
 ### Country code normalization
 
@@ -137,18 +158,17 @@ input --> trim --> empty?                     --> null (empty)
 ```
 
 - It uses `i18n-iso-countries` data, with its own name index so that names shared by two countries, such as "Congo", resolve to `null` instead of a guess.
-- The bulk import, `POST /leads/country-codes/normalize`, and the `pnpm db:normalize-countries` backfill command all use it.
+- The import plan, through the registry's country rule, and the `pnpm db:normalize-countries` backfill command both use it.
 - The backfill defaults to a dry run and needs `--apply` to write.
 
 ### Message generation
 
-`generateMessageFromTemplate` in `backend/src/utils/messageGenerator.ts` is the only unit-tested backend logic.
+`generateMessageFromTemplate` in `backend/src/utils/messageGenerator.ts` renders a template for one lead view.
 
-- It finds `{word}` placeholders with the regex `\{(\w+)\}`.
-- It throws `Unknown field in template` for names outside a hardcoded allow-list.
-- It throws `Missing required field` when the lead value is `null`, `undefined`, or empty.
-- It substitutes with `String.prototype.replace`, where a value containing `$&` or `$1` would be interpreted as a replacement pattern.
-- The allow-list duplicates the frontend list in `MessageTemplateModal.tsx`, so both must change together when a field is added.
+- It finds `{word}` placeholders and accepts exactly the registry fields marked `templatable`, so a new field becomes usable without touching the generator.
+- It throws `Unknown field in template` for any other name, and `Missing required field` when the lead's value is `null`, `undefined`, or empty; the route then skips that lead and reports it.
+- It renders numbers as text, so `{yearsAtCompany}` works, and it inserts values literally, so `$&` in a value is not a replacement pattern.
+- The route loads leads with their roles and passes `toLeadView` results, so derived values such as years at company are available.
 
 ## Temporal integration
 
@@ -195,4 +215,4 @@ Before the fix, a one-second timeout, a 20-second activity, and unlimited retrie
 | Security | Wildcard CORS, no authentication, no rate limiting, no request size limit beyond the Express default. |
 | Configuration | Hardcoded ports, addresses, and database URL. |
 | Shutdown | No graceful shutdown for HTTP server, Prisma, or worker. |
-| Testing | Unit tests for `messageGenerator` and `countryCode`, and API tests with `supertest` against `createApp` from `backend/src/app.ts`. Each test file gets its own copy of a SQLite database migrated from the real migrations, built in `src/test/globalSetup.ts`. |
+| Testing | Unit tests for the value rules, the import plan, the generator, and `countryCode`; migration tests through `src/test/migrations.ts`; and API tests with `supertest` against `createApp` from `backend/src/app.ts`. Each test file gets its own copy of a SQLite database migrated from the real migrations, built in `src/test/globalSetup.ts`. |
