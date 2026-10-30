@@ -2,6 +2,7 @@ import { IconBrandLinkedin } from '@tabler/icons-react'
 import { FC, ReactNode } from 'react'
 import { LeadFieldDefinition } from '../api/types/leads/getFields'
 import { LeadsGetManyOutput } from '../api/types/leads/getMany'
+import { telHref } from './phoneDisplay'
 
 type Lead = LeadsGetManyOutput[number]
 
@@ -11,17 +12,13 @@ interface LeadsTableProps {
   selectedLeads: number[]
   onSelectAll: (checked: boolean) => void
   onSelectLead: (leadId: number, checked: boolean) => void
-  /** The email cell carries verification state and actions owned by the leads list. */
-  renderEmail: (lead: Lead) => ReactNode
+  /** Cells that carry state and actions owned by the leads list, keyed by field, such as email and phone. */
+  customCells?: Partial<Record<string, (lead: Lead) => ReactNode>>
 }
 
 const Blank = () => <span className="text-gray-400">-</span>
 
 const isBlank = (value: unknown) => value === null || value === undefined || value === ''
-
-/** `x123` extensions become the RFC 3966 `;ext=123` form that dialers understand. */
-const telHref = (phone: string) =>
-  `tel:${phone.replace(/\s+/g, '').replace(/(?:x|ext\.?)(\d+)$/i, ';ext=$1')}`
 
 const formatDate = (value: string) =>
   new Date(value).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
@@ -29,8 +26,9 @@ const formatDate = (value: string) =>
 const fullName = (lead: Lead) => `${lead.firstName} ${lead.lastName ?? ''}`.trim()
 
 /** Renders one lead value according to its field type. */
-const renderCell = (lead: Lead, column: LeadFieldDefinition, renderEmail: LeadsTableProps['renderEmail']) => {
-  if (column.key === 'email') return renderEmail(lead)
+const renderCell = (lead: Lead, column: LeadFieldDefinition, customCells: LeadsTableProps['customCells']) => {
+  const custom = customCells?.[column.key]
+  if (custom) return custom(lead)
 
   const value = (lead as Record<string, unknown>)[column.key]
   if (isBlank(value)) return <Blank />
@@ -82,7 +80,7 @@ export const LeadsTable: FC<LeadsTableProps> = ({
   selectedLeads,
   onSelectAll,
   onSelectLead,
-  renderEmail,
+  customCells,
 }) => {
   const isAllSelected = leads.length > 0 && selectedLeads.length === leads.length
   const isIndeterminate = selectedLeads.length > 0 && selectedLeads.length < leads.length
@@ -139,7 +137,7 @@ export const LeadsTable: FC<LeadsTableProps> = ({
                   key={column.key}
                   className={`px-6 py-4 whitespace-nowrap text-sm text-gray-900 ${rowBackground}`}
                 >
-                  {renderCell(lead, column, renderEmail)}
+                  {renderCell(lead, column, customCells)}
                 </td>
               ))}
             </tr>

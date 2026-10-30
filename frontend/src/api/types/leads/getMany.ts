@@ -28,7 +28,24 @@ export type LeadsGetManyOutput = {
   yearsInRole: number | null
   /** Sum of years over the roles at the current company. */
   yearsAtCompany: number | null
+  /** Where the current phone came from. */
+  phoneSource: PhoneSource | null
+  phoneEnrichmentStatus: PhoneEnrichmentStatus
+  /** The provider being tried while a lookup is pending. */
+  phoneEnrichmentProgress: { provider: PhoneProvider; position: number; total: number } | null
+  /** What each provider did in the last lookup. */
+  phoneEnrichmentAttempts: PhoneLookupAttempt[] | null
+  phoneEnrichedAt: string | null
 }[]
+
+export type PhoneProvider = 'ASTRA' | 'NIMBUS' | 'ORION'
+export type PhoneSource = 'IMPORT' | PhoneProvider
+export type PhoneEnrichmentStatus = 'NOT_STARTED' | 'PENDING' | 'FOUND' | 'NOT_FOUND' | 'FAILED'
+export type PhoneLookupAttempt =
+  | { provider: PhoneProvider; result: 'SKIPPED'; reason: string }
+  | { provider: PhoneProvider; result: 'NOT_FOUND' }
+  | { provider: PhoneProvider; result: 'ERRORED'; error: string }
+  | { provider: PhoneProvider; result: 'FOUND'; phone: string; rawPhone: string }
 
 export type LeadRole = {
   position: number

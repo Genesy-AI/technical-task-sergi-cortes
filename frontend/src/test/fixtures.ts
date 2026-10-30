@@ -26,6 +26,11 @@ export const leadFixture = (
   roles: [],
   yearsInRole: null,
   yearsAtCompany: null,
+  phoneSource: null,
+  phoneEnrichmentStatus: 'NOT_STARTED',
+  phoneEnrichmentProgress: null,
+  phoneEnrichmentAttempts: null,
+  phoneEnrichedAt: null,
   ...overrides,
 })
 

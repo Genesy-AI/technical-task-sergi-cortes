@@ -29,8 +29,8 @@
 
 ## 6. Frontend
 
-- [ ] 6.1 Write component tests for the Enrich Phone action, per-row progress with provider and step, each outcome, the source badge, retry for failed rows, re-enrich with confirmation, and polling, and verify they fail first
-- [ ] 6.2 Implement the UI, and verify the tests from 6.1 pass and the build and lint pass
+- [x] 6.1 Write component tests for the Enrich Phone action, per-row progress with provider and step, each outcome, the source badge, retry for failed rows, re-enrich with confirmation, and polling, and verify they fail first
+- [x] 6.2 Implement the UI, and verify the tests from 6.1 pass and the build and lint pass
 
 ## 7. Documentation
 
