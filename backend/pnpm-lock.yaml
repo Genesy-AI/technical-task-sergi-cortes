@@ -29,9 +29,15 @@ importers:
       express:
         specifier: ^5.1.0
         version: 5.1.0(supports-color@5.5.0)
+      free-email-domains:
+        specifier: ^1.15.20
+        version: 1.15.20
       i18n-iso-countries:
         specifier: ^7.14.0
         version: 7.14.0
+      libphonenumber-js:
+        specifier: ^1.13.15
+        version: 1.13.15
     devDependencies:
       '@temporalio/testing':
         specifier: ~1.13.2
@@ -1154,6 +1160,10 @@ packages:
     resolution: {integrity: sha512-buRG0fpBtRHSTCOASe6hD258tEubFoRLb4ZNA6NxMVHNw2gOcwHo9wyablzMzOA5z9xA9L1KNjk/Nt6MT9aYow==}
     engines: {node: '>= 0.6'}
 
+  free-email-domains@1.15.20:
+    resolution: {integrity: sha512-omBLvp1UOU3OtyL65MJe8rsKKI4ZnvBJ1E0W29ctFFpRBn+rz8UEua/jq7jG4wr6+4dzegTbpkJYLf6sA1Xjpg==}
+    engines: {node: '>= 18'}
+
   fresh@2.0.0:
     resolution: {integrity: sha512-Rx/WycZ60HOaqLKAi6cHRKKI7zxWbJ31MhntmtwMoaTeF7XFH9hhBp8vITaMidfljRQ6eYWCKkaTK+ykVJHP2A==}
     engines: {node: '>= 0.8'}
@@ -1306,6 +1316,9 @@ packages:
 
   json-schema-traverse@1.0.0:
     resolution: {integrity: sha512-NM8/P9n3XjXhIZn1lLhkFaACTOURQXjWhV4BA/RnOv8xvgqtqpAX9IO4mRQxSx1Rlo4tqzeqb0sOlruaOy3dug==}
+
+  libphonenumber-js@1.13.15:
+    resolution: {integrity: sha512-AHdhEQeDFEJ4GKDAQ9AwxChy+v2kUILUB3TGQRpkXMkWePjXTU/WQEzWVQoIx/Gz8fE73Wr5SEuZCy2vk8jrMQ==}
 
   loader-runner@4.3.0:
     resolution: {integrity: sha512-3R/1M+yS3j5ou80Me59j7F9IMs4PXs3VqRrm0TU3AbKPxlmpoY1TNscJV/oGJXo8qCatFGTfDbY6W6ipGOYXfg==}
@@ -3007,6 +3020,8 @@ snapshots:
 
   forwarded@0.2.0: {}
 
+  free-email-domains@1.15.20: {}
+
   fresh@2.0.0: {}
 
   fs-monkey@1.1.0: {}
@@ -3138,6 +3153,8 @@ snapshots:
   json-parse-even-better-errors@2.3.1: {}
 
   json-schema-traverse@1.0.0: {}
+
+  libphonenumber-js@1.13.15: {}
 
   loader-runner@4.3.0: {}
 
