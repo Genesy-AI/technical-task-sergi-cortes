@@ -7,11 +7,11 @@ The wireframes in `docs/ui-wireframes.png` show the intended UX for the table, t
 
 | Feature | UI entry point | Backend | Status |
 | --- | --- | --- | --- |
-| List leads | Page load | `GET /leads` | Working, unpaginated. |
+| List leads | Page load | `GET /leads`, `GET /leads/fields` | Working, unpaginated, with configurable columns including phone, LinkedIn, and years. |
 | Select leads | Row and header checkboxes | - | Working, with indeterminate header state. |
 | Delete leads | Toolbar "Delete" | `DELETE /leads` | Working, no confirmation dialog. |
-| Import leads from CSV | Toolbar "Import CSV" | `POST /leads/bulk`, `POST /leads/country-codes/normalize` | Working, and countries are converted to ISO codes or left blank. |
-| Generate messages | Enrich, then "Generate Messages" | `POST /leads/generate-messages` | Working. |
+| Import leads from CSV | Toolbar "Import CSV" | `POST /leads/import/preview`, `POST /leads/bulk` | Working, with people grouped by email into role histories and invalid values blanked with notes. |
+| Generate messages | Enrich, then "Generate Messages" | `POST /leads/generate-messages` | Working, with every templatable field and missing-field warnings. |
 | Verify emails | Enrich, then "Verify Email" | `POST /leads/verify-emails` and Temporal | Working in the background, with per-row progress and outcomes. |
 | Guess gender | Enrich, then "Guess Gender" | none | Placeholder toast only. |
 | Create, read, update, delete one lead | No UI | `POST`, `GET`, `PATCH`, `DELETE /leads/:id` | API only, create and update contracts are broken. |
@@ -52,25 +52,28 @@ sequenceDiagram
     participant DB as SQLite
 
     U->>M: Drop or pick a .csv file
-    M->>P: parseCsv(text)
-    P-->>M: CsvLead[] with isValid and errors
-    M-->>U: Summary (total, valid, invalid, duplicates) and preview table
-    U->>M: Import N valid leads
-    M->>API: POST /leads/bulk { leads: valid rows }
-    API->>API: Re-validate required fields
-    API->>DB: Find existing by firstName + lastName
-    loop each new lead
-        API->>DB: create
+    M->>P: readCsvRows(text)
+    P-->>M: raw rows, headers as written
+    M->>API: POST /leads/import/preview { rows }
+    API->>DB: find existing emails, ignoring case
+    API-->>M: plan: people with roles, notes, invalid rows
+    M-->>U: Summary (rows, leads to import, invalid, already exist) and preview per person
+    U->>M: Import N leads
+    M->>API: POST /leads/bulk { rows }
+    API->>API: build the same plan
+    loop each new person
+        API->>DB: create lead with roles
     end
-    API-->>M: importedCount, duplicatesSkipped, invalidLeads, errors
+    API-->>M: importedCount, duplicatesSkipped, invalidRows, errors
     M-->>U: success toast, modal closes, table refetches
 ```
 
-- Validation runs twice, in the browser for preview and in the backend for safety, with different rules.
-- The browser validates email format, while the backend only checks that email is a non-empty string.
-- The backend converts every `countryCode` to an ISO alpha-2 code or blank, and the preview shows the result per row before import.
-- The sample `docs/leads-with-errors.csv` imports `12` as `DZ` and `XXX` as blank, which fixes the "CSV country codes" bug in the README.
-- Per-row backend errors are returned but not shown to the user.
+- One function builds the plan for both the preview and the import, so the preview shows exactly what will be stored ([decision 0004](../decisions/0004-backend-computes-the-import-plan.md)).
+- Rows with the same email become one person with a role history; years at company sum the roles at the current company.
+- The current role is the last row, unless an `isCurrentRole` column marks another.
+- Invalid phone, LinkedIn, years, or country values are stored blank with a note, and countries are converted to ISO codes, so `12` becomes `DZ` and `XXX` is blank.
+- Existing leads are matched by email, ignoring case, and identical rows for one person are merged with a note.
+- Per-person backend errors during the write are returned but not shown to the user.
 
 ## Message generation
 
@@ -102,8 +105,9 @@ sequenceDiagram
     end
 ```
 
-- Insertable fields are a hardcoded list of six chips, which will not scale as fields grow.
-- The wireframe expects missing fields to produce an empty message with a warning, while the code skips the lead and reports an error.
+- Fields come from the registry in a grouped, searchable picker, so the list scales as fields grow.
+- Before generating, the composer shows how many selected leads lack each used field and flags unknown fields.
+- A lead missing a used field gets no message and is listed afterwards, a product decision that differs from the wireframe's empty message.
 - There is no preview of the rendered message before saving.
 
 ## Email verification
@@ -137,11 +141,11 @@ sequenceDiagram
 
 ## Features requested by the README
 
-These features are not implemented yet and are listed here to show where they fit.
+This table shows where each README feature fits and whether it is done.
 
 | Feature | Touch points in the current design |
 | --- | --- |
-| New fields: phone number, years at company, LinkedIn URL | Prisma model and migration, bulk import mapping, `messageGenerator` allow-list and `Lead` type, frontend types, `csvParser` switch, `CsvImportModal` mapping and help text, `MessageTemplateModal` field list, `LeadsList` columns. |
+| New fields: phone number, years at company, LinkedIn URL | Done by the add-lead-fields change, see [the feature document](../features/add-lead-fields.md). |
 | Enrich phone with three providers in sequence | New Temporal workflow and provider activities, a provider abstraction, a workflow ID per lead for idempotency, an asynchronous start endpoint, a status representation on the lead, and progress feedback in the table. |
 | Email verification feedback | Done by the fix-email-verification-stall change, see [FIX-002](../fixes/FIX-002-email-verification-stall.md). |
 | Country code validation | Done by the fix-csv-country-codes change, see [FIX-001](../fixes/FIX-001-csv-country-codes.md). |

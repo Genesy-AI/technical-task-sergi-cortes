@@ -36,8 +36,8 @@
 
 ## 7. Documentation
 
-- [ ] 7.1 Record the field registry and backend import preview decisions in `design/decisions`, linked to this change, and verify the files exist
-- [ ] 7.2 Update `design/architecture` for the new model, endpoints, and UI, mark finding A2 resolved, and add the change to `CHANGELOG.md` with its breaking items, and verify the links resolve
+- [x] 7.1 Record the field registry and backend import preview decisions in `design/decisions`, linked to this change, and verify the files exist
+- [x] 7.2 Update `design/architecture` for the new model, endpoints, and UI, mark finding A2 resolved, and add the change to `CHANGELOG.md` with its breaking items, and verify the links resolve
 
 ## 8. End-to-end verification
 

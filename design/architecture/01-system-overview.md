@@ -16,9 +16,11 @@ The product surface is a single page with a leads table, a CSV import modal, and
 │   │   ├── migrations/       4 migrations, 2024-07 to 2025-09
 │   │   └── dev.db            Committed SQLite database file
 │   └── src/
-│       ├── index.ts          All HTTP routes, CORS, server bootstrap, worker bootstrap
+│       ├── index.ts          Entry point: server and worker bootstrap
+│       ├── app.ts            createApp: CORS and all HTTP routes
 │       ├── worker.ts         Temporal worker factory
-│       ├── utils/            messageGenerator (+ unit tests)
+│       ├── leads/            field registry, value rules, import plan, lead view (+ unit tests)
+│       ├── utils/            messageGenerator, countryCode (+ unit tests)
 │       └── workflows/        verifyEmailWorkflow + activities
 ├── frontend/                 React SPA (ESM, Vite)
 │   └── src/

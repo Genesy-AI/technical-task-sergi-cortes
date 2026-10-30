@@ -10,9 +10,13 @@ flowchart TB
     MAIN[main.tsx<br/>StrictMode + createRoot] --> PROV[Providers.tsx<br/>QueryClientProvider, Devtools, Toaster]
     PROV --> APP[App.tsx<br/>header + layout]
     APP --> LIST[LeadsList.tsx<br/>table, selection, toolbar, Enrich menu]
+    LIST --> TABLE[LeadsTable.tsx<br/>registry columns, pinned name]
+    LIST --> COLS[ColumnMenu.tsx + columnVisibility.ts<br/>visible columns in localStorage]
     LIST --> MSGM[MessageTemplateModal.tsx<br/>portal]
+    MSGM --> PICK[FieldPicker.tsx + templateCoverage.ts]
     LIST --> CSVM[CsvImportModal.tsx<br/>portal]
-    CSVM --> PARSER[utils/csvParser.ts<br/>PapaParse + validation]
+    CSVM --> PARSER[utils/csvParser.ts<br/>PapaParse into raw rows]
+    CSVM --> PREV[ImportPreviewTable.tsx<br/>backend plan per person]
     LIST --> API[api/index.ts]
     MSGM --> API
     CSVM --> API
@@ -25,14 +29,17 @@ flowchart TB
 
 | Component | Lines | Responsibilities |
 | --- | --- | --- |
-| `LeadsList` | 334 | Fetches leads, renders the table, manages selection, toolbar, Enrich dropdown, delete and verify mutations, loading, error, and empty states. |
-| `CsvImportModal` | 354 | File picking and drag-and-drop, parsing, preview table, summary stats, import mutation, escape and backdrop handling, body scroll lock. |
-| `MessageTemplateModal` | 304 | Template editor, field insertion at the caret, generate mutation, per-lead error display, escape and backdrop handling, body scroll lock. |
+| `LeadsList` | 367 | Fetches leads and the field registry, manages selection, toolbar, Enrich dropdown, delete and verify mutations, loading, error, and empty states. |
+| `LeadsTable` | 151 | Renders the visible registry columns per field type, with pinned selection and name columns, `tel:` and LinkedIn links, and truncation. |
+| `CsvImportModal` | 304 | File picking and drag-and-drop, parsing into raw rows, the backend preview, summary stats, and the import mutation. |
+| `ImportPreviewTable` | 112 | Shows the backend's import plan per person, with roles, years at company, and notes, plus invalid rows. |
+| `MessageTemplateModal` | 319 | Template editor, field insertion at the caret, missing-field warnings, generate mutation, and per-lead error display. |
+| `FieldPicker` | 75 | Grouped, searchable list of templatable registry fields. |
 
 - Each component owns its data fetching, mutations, local UI state, and markup, with no container and presentational split.
 - Markup is inline Tailwind classes and inline SVG icons, even though `@tabler/icons-react` is a dependency.
 - Both modals duplicate the same portal, backdrop, escape key, and scroll lock logic.
-- Table columns are hardcoded in JSX, so each new lead field requires editing header and row markup.
+- Table columns, the column menu, and the composer's fields come from `GET /leads/fields` ([decision 0003](../decisions/0003-lead-field-registry.md)), so a new field needs no markup change unless it has a new type.
 - The Enrich dropdown has no click-outside handler and no keyboard navigation.
 - "Guess Gender" is a placeholder that shows an error toast.
 - `EmailVerificationCell` shows each lead's verification status under the email: a spinner while verifying, labelled icons for the outcomes, and a Retry button when a check could not complete.
@@ -72,29 +79,25 @@ The fix-csv-country-codes change added the field, and [an improvement note](../i
 
 ## State management
 
-- Server state lives in TanStack Query under the single key `['leads', 'getMany']`.
-- Every mutation invalidates that key on success, so the whole table is refetched after each action.
+- Server state lives in TanStack Query under `['leads', 'getMany']`, `['leads', 'fields']` (fetched once), and `['leads', 'importPreview', ...]` per loaded file.
+- Every mutation invalidates the leads key on success, so the whole table is refetched after each action.
 - The leads query disables retries, and refetches every two seconds while any lead's verification is `PENDING` (`leadsPolling.ts`).
-- UI state such as selection and modal visibility is local `useState` in `LeadsList`.
+- UI state such as selection and modal visibility is local `useState` in `LeadsList`, and the visible table columns persist in `localStorage` under a versioned key.
 - Selected lead IDs are not pruned after a refetch, so a deleted lead can remain selected.
 - `QueryClient` uses library defaults, and React Query Devtools are rendered unconditionally.
 
 ## CSV parsing
 
-`parseCsv` in `frontend/src/utils/csvParser.ts` runs fully in the browser.
+`readCsvRows` in `frontend/src/utils/csvParser.ts` only turns the file text into rows, keeping headers as written.
+Header mapping, grouping into people, and validation happen in the backend ([decision 0004](../decisions/0004-backend-computes-the-import-plan.md)).
 
-1. PapaParse reads the text with headers, trims values, and lowercases headers.
-2. Critical parse errors of type `Delimiter`, `Quotes`, or `FieldMismatch` abort the import.
-3. Each row maps normalized headers to fields with a `switch`, and unknown columns are ignored.
-4. Required fields and email format are validated, and each row gets `isValid`, `errors`, and `rowIndex`.
+1. PapaParse reads the text with headers, trims headers and values, and skips empty lines.
+2. Critical parse errors of type `Delimiter`, `Quotes`, or `FieldMismatch`, and files without data rows, abort with a message.
+3. The modal sends the raw rows to `POST /leads/import/preview` and renders the returned plan with `ImportPreviewTable`.
+4. Importing sends the same raw rows to `POST /leads/bulk`; if the preview fails, the import stays disabled.
 
-- `countryCode` is kept as the raw string, because the backend owns conversion.
-  The modal sends the file's distinct country values to `POST /leads/country-codes/normalize` and shows each row's result in a Country column through `CountryPreviewCell`.
-  A converted value shows its code and "Converted from" the original, a cleared value shows a blank and "not recognized, left blank", and a failed check shows the raw value with a warning without blocking the import.
-- `yearsInRole` and `phoneNumber` columns from the sample CSVs are silently dropped.
 - The file is read with `FileReader.readAsText`, which assumes UTF-8.
 - The extension check `file.name.endsWith('.csv')` is case-sensitive, so `.CSV` is rejected.
-- The modal computes "duplicates in CSV" for display, but still sends those duplicates to the backend.
 
 ## Styling and assets
 
@@ -109,5 +112,5 @@ The fix-csv-country-codes change added the field, and [an improvement note](../i
 - `globalTypes.d.ts` declares `$TSFixMe` aliases for `any`, which weakens the strict settings where used.
 - Prettier uses no semicolons, single quotes, and a 110 character print width.
 - ESLint 9 runs from a flat `eslint.config.js` built on `typescript-eslint`, and `pnpm lint` passes.
-- Vitest runs in jsdom with Testing Library, and `csvParser` and `CsvImportModal` have tests.
-- `LeadsList` has component tests, and the shared test setup stubs `matchMedia`, which jsdom lacks and `react-hot-toast` reads.
+- Vitest runs in jsdom with Testing Library, and the parser, the import modal, the leads list and table columns, and the message composer have tests built on shared fixtures in `src/test/fixtures.ts`.
+- The shared test setup stubs `matchMedia`, which jsdom lacks, and provides an in-memory `localStorage` when Node 25+ hides jsdom's.

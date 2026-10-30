@@ -8,7 +8,7 @@ Each finding names the location so it can become a fix spec, a decision, or an i
 - The scope is small and the code is easy to read end to end.
 - The frontend API layer gives typed, discoverable calls through `api.leads.*`.
 - TanStack Query keeps server state out of component state.
-- `messageGenerator` and `csvParser` are pure functions with good unit test coverage.
+- `messageGenerator`, `countryCode`, the value rules, and the import plan are pure functions with good unit test coverage.
 - Batch endpoints report per-lead failures instead of failing the whole request.
 - Temporal is already wired, so durable background work has a home.
 
@@ -24,17 +24,17 @@ These are bugs that affect users or block the build.
 | D4 | Frontend lint fails because ESLint 9 needs a flat config. | `frontend/.eslintrc.cjs` | `pnpm lint` fails. **Resolved** in fix-csv-country-codes task 2.3. |
 | D5 | `POST /leads` reads `name` while the client sends `firstName`. | `backend/src/app.ts` | Create always returns 400. |
 | D6 | The client calls `PUT /leads/:id` while the server exposes `PATCH`, and the server reads `name`. | `frontend/src/api/modules/leads.ts`, `backend/src/app.ts` | Update always returns 404. |
-| D7 | Duplicate rows inside one CSV are all imported. | `/leads/bulk` | Duplicate leads. |
+| D7 | Duplicate rows inside one CSV are all imported. | `/leads/bulk` | Duplicate leads. **Resolved** by add-lead-fields: rows group by email and identical roles merge. |
 | D8 | `GET /leads/:id` returns `null` with status 200 for a missing lead. | `backend/src/app.ts` | Wrong HTTP semantics. |
-| D9 | Template values containing `$&` or `$1` are treated as replacement patterns. | `backend/src/utils/messageGenerator.ts` | Corrupted messages for some inputs. |
+| D9 | Template values containing `$&` or `$1` are treated as replacement patterns. | `backend/src/utils/messageGenerator.ts` | Corrupted messages for some inputs. **Resolved** by add-lead-fields: values are inserted literally. |
 
 ## Design issues
 
 | ID | Finding | Why it matters |
 | --- | --- | --- |
 | A1 | All routes, validation, business rules, and persistence sit in one file. | Hard to test, review, and extend, and every feature edits the same file. |
-| A2 | Lead fields are listed separately in the Prisma model, two backend modules, four frontend modules, and the table markup. | Adding a field needs many coordinated edits, which the README new-fields task exposes. |
-| A3 | No shared contract or runtime validation between frontend and backend. | Contracts have already drifted, see D5, D6, and the nullable types. |
+| A2 | Lead fields are listed separately in the Prisma model, two backend modules, four frontend modules, and the table markup. | Adding a field needs many coordinated edits, which the README new-fields task exposes. **Resolved** by the lead field registry, [decision 0003](../decisions/0003-lead-field-registry.md). |
+| A3 | No shared contract or runtime validation between frontend and backend. | Contracts have already drifted, see D5, D6, and the nullable types. **Partly resolved**: field metadata and import rules now come from the backend, but frontend types are still hand-written. |
 | A4 | Long-running work runs inside the HTTP request. | Requests hang, there is no progress feedback, and proxies will time out. **Resolved** for email verification by [decision 0002](../decisions/0002-start-then-observe-background-work.md). |
 | A5 | Workflow IDs include a timestamp. | No idempotency, the same lead can be processed many times in parallel. **Resolved**: ids are now `verify-email-{leadId}`. |
 | A6 | The Temporal worker runs inside the API process. | The API cannot start without Temporal, and the two cannot scale separately. |
@@ -58,7 +58,7 @@ These are bugs that affect users or block the build.
 ## Performance
 
 - `GET /leads` returns every row with no pagination, and every mutation refetches the full list.
-- Bulk import and message generation issue one query per lead.
+- Bulk import creates one lead with its roles per query, and message generation updates one lead per query.
 - Email verification shares one Temporal client and starts workflows concurrently, while the table polls every two seconds only while a verification is pending.
 - These are acceptable for the sample data sizes but will not hold at production volumes.
 
