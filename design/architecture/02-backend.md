@@ -222,7 +222,7 @@ Before the fix, a one-second timeout, a 20-second activity, and unlimited retrie
 
 ### Phone enrichment
 
-Phone lookups follow the same start-then-observe pattern, introduced by the [enrich-lead-phone](../../openspec/changes/enrich-lead-phone/design.md) change.
+Phone lookups follow the same start-then-observe pattern, introduced by the [enrich-lead-phone](../../openspec/changes/archive/2026-10-30-enrich-lead-phone/design.md) change.
 
 ```mermaid
 sequenceDiagram

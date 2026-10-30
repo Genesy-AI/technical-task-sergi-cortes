@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| OpenSpec change | [enrich-lead-phone](../../openspec/changes/enrich-lead-phone/proposal.md) |
+| OpenSpec change | [enrich-lead-phone](../../openspec/changes/archive/2026-10-30-enrich-lead-phone/proposal.md) |
 | Capability | `phone-enrichment` |
 | Depends on | `fix-email-verification-stall`, `add-lead-fields` |
 | Status | Planned |

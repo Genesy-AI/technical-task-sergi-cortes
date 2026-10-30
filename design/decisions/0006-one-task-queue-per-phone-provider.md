@@ -2,7 +2,7 @@
 
 - **Status:** Accepted, extends [0002](0002-start-then-observe-background-work.md)
 - **Date:** 2026-10-30
-- **Related change:** [enrich-lead-phone](../../openspec/changes/enrich-lead-phone/design.md)
+- **Related change:** [enrich-lead-phone](../../openspec/changes/archive/2026-10-30-enrich-lead-phone/design.md)
 
 ## Decision
 

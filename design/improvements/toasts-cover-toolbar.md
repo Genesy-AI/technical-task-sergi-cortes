@@ -1,6 +1,6 @@
 # Stacked toasts cover the leads toolbar
 
-- **Related change:** [enrich-lead-phone](../../openspec/changes/enrich-lead-phone/design.md)
+- **Related change:** [enrich-lead-phone](../../openspec/changes/archive/2026-10-30-enrich-lead-phone/design.md)
 - **Found:** 2026-10-30, during the phone enrichment end-to-end run
 
 ## Problem

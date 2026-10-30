@@ -37,6 +37,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `backend/.env` loading at startup, with provider keys, base URLs, `PHONE_PROVIDER_ORDER`, and per-provider `PHONE_<PROVIDER>_MAX_PER_SECOND` limits documented in `backend/.env.sample`.
 - Decisions [0005](design/decisions/0005-phone-provider-abstraction.md) and [0006](design/decisions/0006-one-task-queue-per-phone-provider.md) on the provider abstraction and per-provider task queues.
 - A per-provider rate limit spaces that provider's calls by the interval within the worker, since the Temporal task queue limit alone let bursts through.
+- Main OpenSpec spec `phone-enrichment`, synced from the archived `enrich-lead-phone` change.
 
 ### Changed
 
