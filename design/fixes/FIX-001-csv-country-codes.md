@@ -42,4 +42,17 @@ See the change's design.md for details.
 
 ## Evidence
 
-Reproduction screenshot, backfill dry-run output, and verification screenshot are added here during tasks 1.1, 5.3, and 7.1.
+### Reproduction (task 1.1)
+
+Reproduced on 2026-10-30 by importing `docs/leads-with-errors.csv` through the UI with Playwright against the local stack.
+The preview has no Country column, so the user cannot see the bad values before importing.
+After import, the table shows `12` for Amanda James and `XXX` for Latasha Martin and Linda Choi, and the seeded lead Emily Johnson shows `UK`.
+
+![Import preview before the fix](assets/FIX-001/before-preview.png)
+
+![Leads table before the fix](assets/FIX-001/before-table.png)
+
+Related observations outside this fix:
+
+- Curtis Monson is imported twice, because duplicates within one file are not removed (finding D7 in the architecture assessment).
+- The leads table clips its last column header at the card edge.

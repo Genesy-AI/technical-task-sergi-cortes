@@ -2,14 +2,14 @@
 
 ## 1. Reproduce the bug end to end
 
-- [ ] 1.1 Start the backend, Temporal, and frontend, import `docs/leads-with-errors.csv` through the UI, and verify the table shows `XXX` and `12` as countries, recording a screenshot in `design/fixes/FIX-001-csv-country-codes.md`
-- [ ] 1.2 Write a failing API test that posts the sample file's rows to `/leads/bulk` and asserts no stored country is `XXX` or `12`, and verify it fails for the documented reason
+- [x] 1.1 Start the backend, Temporal, and frontend, import `docs/leads-with-errors.csv` through the UI, and verify the table shows `XXX` and `12` as countries, recording a screenshot in `design/fixes/FIX-001-csv-country-codes.md`
+- [x] 1.2 Write a failing API test that posts the sample file's rows to `/leads/bulk` and asserts no stored country is `XXX` or `12`, and verify it fails for the documented reason
 
 ## 2. Testable backend app
 
-- [ ] 2.1 Split `backend/src/index.ts` into an exported Express app and an entry point that listens and starts the worker, skipping this task if `fix-email-verification-stall` already did it, and verify `pnpm dev` still serves `GET /leads`
-- [ ] 2.2 Add `supertest` and a test database setup to the backend, and verify a smoke test for `GET /leads` passes with `pnpm exec vitest run`
-- [ ] 2.3 Fix the pre-existing frontend type error in `useApiMutation.ts` and migrate ESLint to a flat config, skipping whatever another change already fixed, and verify `pnpm build` and `pnpm lint` pass in the frontend
+- [x] 2.1 Split `backend/src/index.ts` into an exported Express app and an entry point that listens and starts the worker, skipping this task if `fix-email-verification-stall` already did it, and verify `pnpm dev` still serves `GET /leads`
+- [x] 2.2 Add `supertest` and a test database setup to the backend, and verify a smoke test for `GET /leads` passes with `pnpm exec vitest run`
+- [x] 2.3 Fix the pre-existing frontend type error in `useApiMutation.ts` and migrate ESLint to a flat config, skipping whatever another change already fixed, and verify `pnpm build` and `pnpm lint` pass in the frontend
 
 ## 3. Country conversion module
 
