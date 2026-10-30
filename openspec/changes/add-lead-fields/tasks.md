@@ -12,9 +12,9 @@
 
 ## 3. Lead field registry and value rules
 
-- [ ] 3.1 Write unit tests for the phone, LinkedIn, and years rules from the `lead-profile` spec, and verify they fail first
-- [ ] 3.2 Implement the rules and the registry in `backend/src/leads/`, and verify the tests from 3.1 pass
-- [ ] 3.3 Add `GET /leads/fields` with an API test asserting keys, labels, groups, and column defaults, and verify it passes
+- [x] 3.1 Write unit tests for the phone, LinkedIn, and years rules from the `lead-profile` spec, and verify they fail first
+- [x] 3.2 Implement the rules and the registry in `backend/src/leads/`, and verify the tests from 3.1 pass
+- [x] 3.3 Add `GET /leads/fields` with an API test asserting keys, labels, groups, and column defaults, and verify it passes
 
 ## 4. Import
 

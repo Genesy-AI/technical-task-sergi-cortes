@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import express, { Express, Request, Response } from 'express'
 import { StartVerification, temporalVerificationStarter } from './emailVerification/start'
+import { publicFieldDefinitions } from './leads/leadFields'
 import { getTemporalClient } from './temporal/client'
 import { normalizeCountryCode } from './utils/countryCode'
 import { generateMessageFromTemplate } from './utils/messageGenerator'
@@ -61,6 +62,11 @@ export function createApp(
       },
     })
     res.json(lead)
+  })
+
+  // Registered before `/leads/:id`, which would otherwise treat "fields" as an id.
+  app.get('/leads/fields', (_req: Request, res: Response) => {
+    res.json({ fields: publicFieldDefinitions() })
   })
 
   app.get('/leads/:id', async (req: Request, res: Response) => {
