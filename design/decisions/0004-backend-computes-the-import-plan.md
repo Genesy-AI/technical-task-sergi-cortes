@@ -2,7 +2,7 @@
 
 - **Status:** Accepted, extends [0001](0001-backend-owns-country-code-conversion.md)
 - **Date:** 2026-10-30
-- **Related change:** [add-lead-fields](../../openspec/changes/add-lead-fields/design.md)
+- **Related change:** [add-lead-fields](../../openspec/changes/archive/2026-10-30-add-lead-fields/design.md)
 
 ## Decision
 

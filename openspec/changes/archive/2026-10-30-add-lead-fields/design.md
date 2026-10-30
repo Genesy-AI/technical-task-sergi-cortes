@@ -5,7 +5,7 @@
 See proposal.md for motivation and the four delta specs for the required behavior.
 
 - Lead fields are enumerated in about 11 places across 9 files (finding A2 in `design/architecture/05-assessment.md`): the Prisma model, the message generator's interface and allow-list, the bulk import mapping, four frontend type files, the CSV parser, the import modal, the composer, and the table.
-- The CSV parser runs in the browser, while country conversion already runs in the backend with a preview endpoint ([decision 0001](../../../design/decisions/0001-backend-owns-country-code-conversion.md)).
+- The CSV parser runs in the browser, while country conversion already runs in the backend with a preview endpoint ([decision 0001](../../../../design/decisions/0001-backend-owns-country-code-conversion.md)).
 - The bulk import detects duplicates by first and last name, and does not deduplicate rows within one file (finding D7).
 - All sample CSVs share the header `firstName,lastName,email,jobTitle,countryCode,companyName,yearsInRole,phoneNumber`, with no LinkedIn column.
 - Sample phones use mixed formats with extensions, such as `(731)123-9702` and `+1-280-754-0462x2154`, and look like US numbers even when the country is elsewhere.

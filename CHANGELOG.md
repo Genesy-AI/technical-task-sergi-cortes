@@ -29,6 +29,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - A column menu for the leads table, remembered per browser, with phone as a `tel:` link and LinkedIn as a link opening in a new tab.
 - A grouped, searchable field picker in the message composer, with warnings for fields missing in some selected leads.
 - `docs/leads-roles.csv` sample with people who held several roles.
+- Main OpenSpec specs `lead-profile`, `lead-import`, `message-composition`, and `leads-table`, synced from the archived `add-lead-fields` change.
 
 ### Changed
 

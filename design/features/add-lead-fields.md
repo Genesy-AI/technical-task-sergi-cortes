@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| OpenSpec change | [add-lead-fields](../../openspec/changes/add-lead-fields/proposal.md) |
+| OpenSpec change | [add-lead-fields](../../openspec/changes/archive/2026-10-30-add-lead-fields/proposal.md) |
 | Capabilities | `lead-profile`, `lead-import`, `message-composition`, `leads-table` |
 | Assessment findings | A2, A3, and D7 in [05-assessment.md](../architecture/05-assessment.md) |
 | Depends on | `fix-email-verification-stall` |
