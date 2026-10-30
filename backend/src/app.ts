@@ -2,7 +2,16 @@ import { PrismaClient } from '@prisma/client'
 import express, { Express, Request, Response } from 'express'
 import { Connection, Client } from '@temporalio/client'
 import { verifyEmailWorkflow } from './workflows'
+import { normalizeCountryCode } from './utils/countryCode'
 import { generateMessageFromTemplate } from './utils/messageGenerator'
+
+/** Upper bounds that keep the normalize endpoint cheap; a preview sends only distinct values. */
+const MAX_NORMALIZE_VALUES = 1000
+const MAX_COUNTRY_VALUE_LENGTH = 100
+
+/** Clients may send numeric codes as JSON numbers, so any non-null value is read as text. */
+const toCountryCode = (value: unknown): string | null =>
+  normalizeCountryCode(value == null ? null : String(value)).code
 
 /**
  * Builds the HTTP API without starting a server or the Temporal worker,
@@ -171,6 +180,25 @@ export function createApp(prisma: PrismaClient): Express {
     }
   })
 
+  // Lets the CSV import preview show exactly what the bulk import will store, without duplicating the rules.
+  app.post('/leads/country-codes/normalize', (req: Request, res: Response) => {
+    const values: unknown = req.body?.values
+
+    if (!Array.isArray(values)) {
+      return res.status(400).json({ error: 'values must be an array of strings' })
+    }
+    if (values.length > MAX_NORMALIZE_VALUES) {
+      return res.status(400).json({ error: `values must contain at most ${MAX_NORMALIZE_VALUES} entries` })
+    }
+    if (!values.every((value) => typeof value === 'string' && value.length <= MAX_COUNTRY_VALUE_LENGTH)) {
+      return res
+        .status(400)
+        .json({ error: `every value must be a string of at most ${MAX_COUNTRY_VALUE_LENGTH} characters` })
+    }
+
+    res.json({ results: values.map((value: string) => ({ value, ...normalizeCountryCode(value) })) })
+  })
+
   app.post('/leads/bulk', async (req: Request, res: Response) => {
     if (!req.body || typeof req.body !== 'object') {
       return res.status(400).json({ error: 'Request body is required and must be valid JSON' })
@@ -231,7 +259,7 @@ export function createApp(prisma: PrismaClient): Express {
               lastName: lead.lastName.trim(),
               email: lead.email.trim(),
               jobTitle: lead.jobTitle ? lead.jobTitle.trim() : null,
-              countryCode: lead.countryCode ? lead.countryCode.trim() : null,
+              countryCode: toCountryCode(lead.countryCode),
               companyName: lead.companyName ? lead.companyName.trim() : null,
             },
           })

@@ -19,10 +19,10 @@
 
 ## 4. Import and preview
 
-- [ ] 4.1 Apply the conversion in the `/leads/bulk` handler, and verify the test from 1.2 now passes
-- [ ] 4.2 Add `POST /leads/country-codes/normalize` with request validation and API tests for valid, converted, cleared, and malformed requests, and verify the tests pass
-- [ ] 4.3 Show the converted country and a converted or not-recognized note per row in the CSV import modal, with a fallback note when the endpoint fails, and verify with component tests
-- [ ] 4.4 Update the modal help text to describe accepted country formats, and verify it renders in the component test
+- [x] 4.1 Apply the conversion in the `/leads/bulk` handler, and verify the test from 1.2 now passes
+- [x] 4.2 Add `POST /leads/country-codes/normalize` with request validation and API tests for valid, converted, cleared, and malformed requests, and verify the tests pass
+- [x] 4.3 Show the converted country and a converted or not-recognized note per row in the CSV import modal, with a fallback note when the endpoint fails, and verify with component tests
+- [x] 4.4 Update the modal help text to describe accepted country formats, and verify it renders in the component test
 
 ## 5. Backfill
 
