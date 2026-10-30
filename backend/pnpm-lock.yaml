@@ -11,15 +11,21 @@ importers:
       '@prisma/client':
         specifier: ^6.15.0
         version: 6.15.0(prisma@6.15.0(typescript@5.9.2))(typescript@5.9.2)
+      '@temporalio/activity':
+        specifier: ~1.13.2
+        version: 1.13.2
       '@temporalio/client':
-        specifier: ^1.13.0
-        version: 1.13.0
+        specifier: ~1.13.2
+        version: 1.13.2
+      '@temporalio/common':
+        specifier: ~1.13.2
+        version: 1.13.2
       '@temporalio/worker':
-        specifier: ^1.13.0
-        version: 1.13.0(esbuild@0.28.2)
+        specifier: ~1.13.2
+        version: 1.13.2(esbuild@0.28.2)
       '@temporalio/workflow':
-        specifier: ^1.13.0
-        version: 1.13.0
+        specifier: ~1.13.2
+        version: 1.13.2
       express:
         specifier: ^5.1.0
         version: 5.1.0(supports-color@5.5.0)
@@ -27,6 +33,9 @@ importers:
         specifier: ^7.14.0
         version: 7.14.0
     devDependencies:
+      '@temporalio/testing':
+        specifier: ~1.13.2
+        version: 1.13.2(esbuild@0.28.2)
       '@types/express':
         specifier: ^5.0.3
         version: 5.0.3
@@ -555,36 +564,40 @@ packages:
   '@swc/types@0.1.24':
     resolution: {integrity: sha512-tjTMh3V4vAORHtdTprLlfoMptu1WfTZG9Rsca6yOKyNYsRr+MUXutKmliB17orgSZk5DpnDxs8GUdd/qwYxOng==}
 
-  '@temporalio/activity@1.13.0':
-    resolution: {integrity: sha512-/h+S7+D7JylaRGZq/3q6h0HxFwFop5zO7qWWrYAT7HCgXdtVNZJWEbPjpV9elJXDVSZ7lIz4GrZREATYZ38Txw==}
+  '@temporalio/activity@1.13.2':
+    resolution: {integrity: sha512-Mp0pAGNKGeIlZEy6ToLCt1gJdrumu64xHF1yAc1gsOVeqo4a3ISGFbCSpM56bokwtj9jpFK/Z1f3zCFnif2ogg==}
     engines: {node: '>= 18.0.0'}
 
-  '@temporalio/client@1.13.0':
-    resolution: {integrity: sha512-cIEqEFNy8HdvlKGTJQH80C8vUWG0PUAYVS++EGuSNmU3TFb/3TaV/ATVlBiLeiIr05lbDl3LAsWxTSO3gaRXEg==}
+  '@temporalio/client@1.13.2':
+    resolution: {integrity: sha512-gyptINv/i6DTG4sRgE6S10vsO6V56iQQujDFaVIwg5pcRsRqqHIwoOldI4j1RqrEoEy7J4prRBGNwOd5H3Yf8A==}
     engines: {node: '>= 18.0.0'}
 
-  '@temporalio/common@1.13.0':
-    resolution: {integrity: sha512-YBUXof7zsLbjI+J+FdndbN0JPZY3vKbBWhXV5T4efLZD1IyFmHww10bayDk+37/aVCgqPalBbgWHJnkwk0tRYA==}
+  '@temporalio/common@1.13.2':
+    resolution: {integrity: sha512-qpp/1Bn+Uvbnew3jHL5u1YWRfBmNnklzfZwa5oOnQ5EBxKMWmpGzCtvh+VwaGXunbPHh1Teqy76Mqp/Uj2kmbA==}
     engines: {node: '>= 18.0.0'}
 
-  '@temporalio/core-bridge@1.13.0':
-    resolution: {integrity: sha512-xJpO+6m88Bdt2g9n13CvfiLy0Rw80Rn8bbCG1U87LPVPoR2xbE2YgcX7ps56zptiQgrSldT7S8UYU2f5X5iAyQ==}
+  '@temporalio/core-bridge@1.13.2':
+    resolution: {integrity: sha512-zwYZqeWypi1YHTeoYwBYgIVmWNg4+/T+CCcOwtyNUvA25wim85p9JOCB9tKgG4e8Hu1Nptd7yEjPaZtLPmJjjg==}
     engines: {node: '>= 18.0.0'}
 
-  '@temporalio/nexus@1.13.0':
-    resolution: {integrity: sha512-YKVIWzE8/83aGzaR28Y2m45WWlAxboKjHrvpdIrWogYEB7sG6dgju07zIqCKtXcA/k7ja29fq638y5ii7SLP8Q==}
+  '@temporalio/nexus@1.13.2':
+    resolution: {integrity: sha512-oG+yZcgUiDCNU08aI7q5dKvRyeUtzJH7Woz66dx4QlhEIvRoUeEFqjLHySMf2r/3l1pbhZ5G2z12HcL4pVE5Eg==}
     engines: {node: '>= 18.0.0'}
 
-  '@temporalio/proto@1.13.0':
-    resolution: {integrity: sha512-jplwOQAgghdRJljTVI9Lawar4L0vGM+vT0TfxvKm+/hVf4CpPEAwvy+El9doR4wu1uYg9g94LnPmZdzoUu5qyA==}
+  '@temporalio/proto@1.13.2':
+    resolution: {integrity: sha512-V8agtFxM2KkKOtUjcCZFaIdOV64j86VrUQ4bvOZtzwmWGyp5ZCebskoaTTL8UMkRx4bTIeEKOckLrXo8VeorWg==}
     engines: {node: '>= 18.0.0'}
 
-  '@temporalio/worker@1.13.0':
-    resolution: {integrity: sha512-NmtDleOccUVrYwbg8H3gjQt5dPMbKG6SUTegO9KlhipsEuJQ69OAeenMhjUmuEsZhG/jkaFwPR81JnAvBovgIw==}
+  '@temporalio/testing@1.13.2':
+    resolution: {integrity: sha512-Yv+f14igAGaDdaITuOCJgzV+G1c7yVjP1u6nBXrhxGdzTh5FS6l7Zw84XrXOBTVHXfBFHsQnDuZYfGJVKf7vTw==}
     engines: {node: '>= 18.0.0'}
 
-  '@temporalio/workflow@1.13.0':
-    resolution: {integrity: sha512-8mVMB55cwl0e4+EBlp1prQyttJ8qYZfhsieVcygirr5xXKBU6wcSCun3sAk16lTYa4S5We7XZPyZk0vBB6/WOA==}
+  '@temporalio/worker@1.13.2':
+    resolution: {integrity: sha512-UEyHDjY/xJsTIg6DEwla6wncenOrmOGu13HnjwwqY2iUNJdoQUSHlqMK7Cc7hK0zpeAb7qLOCi2A1bSYVncAHg==}
+    engines: {node: '>= 18.0.0'}
+
+  '@temporalio/workflow@1.13.2':
+    resolution: {integrity: sha512-vK8s0iCTMGNLtUZeKiFVfmLd4nVUDaJ4aS0yCy8WvMUpgqBTpaaOWPAy7KiH0grKB7zIskiWljEMtpt3ce586w==}
     engines: {node: '>= 18.0.0'}
 
   '@tsconfig/node10@1.0.11':
@@ -1794,8 +1807,8 @@ packages:
     peerDependencies:
       browserslist: '>= 4.21.0'
 
-  uuid@9.0.1:
-    resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}
+  uuid@11.1.1:
+    resolution: {integrity: sha512-vIYxrBCC/N/K+Js3qSN88go7kIfNPssr/hHCesKCQNAjmgvYS2oqr69kIufEG+O4+PfezOH4EbIeHCfFov8ZgQ==}
     hasBin: true
 
   v8-compile-cache-lib@3.0.1:
@@ -2266,61 +2279,77 @@ snapshots:
     dependencies:
       '@swc/counter': 0.1.3
 
-  '@temporalio/activity@1.13.0':
+  '@temporalio/activity@1.13.2':
     dependencies:
-      '@temporalio/client': 1.13.0
-      '@temporalio/common': 1.13.0
+      '@temporalio/client': 1.13.2
+      '@temporalio/common': 1.13.2
       abort-controller: 3.0.0
 
-  '@temporalio/client@1.13.0':
+  '@temporalio/client@1.13.2':
     dependencies:
       '@grpc/grpc-js': 1.13.4
-      '@temporalio/common': 1.13.0
-      '@temporalio/proto': 1.13.0
+      '@temporalio/common': 1.13.2
+      '@temporalio/proto': 1.13.2
       abort-controller: 3.0.0
       long: 5.3.2
-      uuid: 9.0.1
+      uuid: 11.1.1
 
-  '@temporalio/common@1.13.0':
+  '@temporalio/common@1.13.2':
     dependencies:
-      '@temporalio/proto': 1.13.0
+      '@temporalio/proto': 1.13.2
       long: 5.3.2
       ms: 3.0.0-canary.1
       nexus-rpc: 0.0.1
       proto3-json-serializer: 2.0.2
 
-  '@temporalio/core-bridge@1.13.0':
+  '@temporalio/core-bridge@1.13.2':
     dependencies:
       '@grpc/grpc-js': 1.13.4
-      '@temporalio/common': 1.13.0
+      '@temporalio/common': 1.13.2
       arg: 5.0.2
       cargo-cp-artifact: 0.1.9
       which: 4.0.0
 
-  '@temporalio/nexus@1.13.0':
+  '@temporalio/nexus@1.13.2':
     dependencies:
-      '@temporalio/client': 1.13.0
-      '@temporalio/common': 1.13.0
-      '@temporalio/proto': 1.13.0
+      '@temporalio/client': 1.13.2
+      '@temporalio/common': 1.13.2
+      '@temporalio/proto': 1.13.2
       long: 5.3.2
       nexus-rpc: 0.0.1
 
-  '@temporalio/proto@1.13.0':
+  '@temporalio/proto@1.13.2':
     dependencies:
       long: 5.3.2
       protobufjs: 7.6.6
 
-  '@temporalio/worker@1.13.0(esbuild@0.28.2)':
+  '@temporalio/testing@1.13.2(esbuild@0.28.2)':
+    dependencies:
+      '@temporalio/activity': 1.13.2
+      '@temporalio/client': 1.13.2
+      '@temporalio/common': 1.13.2
+      '@temporalio/core-bridge': 1.13.2
+      '@temporalio/proto': 1.13.2
+      '@temporalio/worker': 1.13.2(esbuild@0.28.2)
+      '@temporalio/workflow': 1.13.2
+      abort-controller: 3.0.0
+    transitivePeerDependencies:
+      - '@swc/helpers'
+      - esbuild
+      - uglify-js
+      - webpack-cli
+
+  '@temporalio/worker@1.13.2(esbuild@0.28.2)':
     dependencies:
       '@grpc/grpc-js': 1.13.4
       '@swc/core': 1.13.5
-      '@temporalio/activity': 1.13.0
-      '@temporalio/client': 1.13.0
-      '@temporalio/common': 1.13.0
-      '@temporalio/core-bridge': 1.13.0
-      '@temporalio/nexus': 1.13.0
-      '@temporalio/proto': 1.13.0
-      '@temporalio/workflow': 1.13.0
+      '@temporalio/activity': 1.13.2
+      '@temporalio/client': 1.13.2
+      '@temporalio/common': 1.13.2
+      '@temporalio/core-bridge': 1.13.2
+      '@temporalio/nexus': 1.13.2
+      '@temporalio/proto': 1.13.2
+      '@temporalio/workflow': 1.13.2
       abort-controller: 3.0.0
       heap-js: 2.6.0
       memfs: 4.38.2
@@ -2340,10 +2369,10 @@ snapshots:
       - uglify-js
       - webpack-cli
 
-  '@temporalio/workflow@1.13.0':
+  '@temporalio/workflow@1.13.2':
     dependencies:
-      '@temporalio/common': 1.13.0
-      '@temporalio/proto': 1.13.0
+      '@temporalio/common': 1.13.2
+      '@temporalio/proto': 1.13.2
       nexus-rpc: 0.0.1
 
   '@tsconfig/node10@1.0.11': {}
@@ -3635,7 +3664,7 @@ snapshots:
       escalade: 3.2.0
       picocolors: 1.1.1
 
-  uuid@9.0.1: {}
+  uuid@11.1.1: {}
 
   v8-compile-cache-lib@3.0.1: {}
 

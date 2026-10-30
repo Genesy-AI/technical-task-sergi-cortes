@@ -2,14 +2,14 @@
 
 ## 1. Reproduce the bug end to end
 
-- [ ] 1.1 Start `temporal server start-dev`, the backend, and the frontend, select Jane Smith and one other lead, run Verify Email from the UI, and verify the request never completes and neither lead updates, recording the Temporal UI retry history and a screenshot in `design/fixes/FIX-002-email-verification-stall.md`
+- [x] 1.1 Start `temporal server start-dev`, the backend, and the frontend, select Jane Smith and one other lead, run Verify Email from the UI, and verify the request never completes and neither lead updates, recording the Temporal UI retry history and a screenshot in `design/fixes/FIX-002-email-verification-stall.md`
 
 ## 2. Test infrastructure
 
-- [ ] 2.1 Split `backend/src/index.ts` into an exported Express app and an entry point that listens and starts the worker, skipping this task if `fix-csv-country-codes` already did it, and verify `pnpm dev` still serves `GET /leads`
-- [ ] 2.2 Add `supertest`, a test database setup, and `@temporalio/testing` to the backend, and verify a smoke API test and a smoke workflow test pass with `pnpm exec vitest run`
-- [ ] 2.3 Fix the pre-existing frontend type error in `useApiMutation.ts` and migrate ESLint to a flat config, skipping whatever another change already fixed, and verify `pnpm build` and `pnpm lint` pass in the frontend
-- [ ] 2.4 Write a failing workflow test showing that verifying `jane.smith@example.com` does not finish within 30 seconds of skipped time, and verify it fails for the documented reason
+- [x] 2.1 Split `backend/src/index.ts` into an exported Express app and an entry point that listens and starts the worker, skipping this task if `fix-csv-country-codes` already did it, and verify `pnpm dev` still serves `GET /leads`
+- [x] 2.2 Add `supertest`, a test database setup, and `@temporalio/testing` to the backend, and verify a smoke API test and a smoke workflow test pass with `pnpm exec vitest run`
+- [x] 2.3 Fix the pre-existing frontend type error in `useApiMutation.ts` and migrate ESLint to a flat config, skipping whatever another change already fixed, and verify `pnpm build` and `pnpm lint` pass in the frontend
+- [x] 2.4 Write a failing workflow test showing that verifying `jane.smith@example.com` does not finish within 30 seconds of skipped time, and verify it fails for the documented reason
 
 ## 3. Verification status model
 

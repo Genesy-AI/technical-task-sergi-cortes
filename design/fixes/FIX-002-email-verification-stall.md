@@ -44,4 +44,31 @@ See the change's design.md for details.
 
 ## Evidence
 
-Reproduction screenshot, Temporal retry history, and verification screenshots are added here during tasks 1.1, 8.1, and 8.2.
+### Reproduction (task 1.1)
+
+Reproduced on 2026-10-30 with Playwright against `temporal server start-dev`, the backend, and the frontend, by selecting Jane Smith and Michael Brown and running Enrich, then Verify Email.
+
+```text
+BEFORE  Jane Smith       | jane.smith@example.com (verified in seed data)
+BEFORE  Michael Brown    | michael.brown@example.com (unknown)
+t=  8s pending=1 toasts=[] | no status change
+...
+t= 63s pending=1 toasts=[] | no status change
+```
+
+- The `POST /leads/verify-emails` request was still open after 63 seconds, with no toast and no status change.
+- Michael Brown was never checked, because the handler awaits Jane Smith's workflow first.
+- The Enrich menu stayed open with no progress indicator.
+- The seed data already marks Jane Smith as verified, which hides the bug until verification runs again.
+
+Temporal showed the activity retrying without limit:
+
+```text
+$ temporal workflow list
+  Running  verify-email-2-1793351070291  verifyEmailWorkflow
+
+$ temporal workflow describe -w verify-email-2-1793351070291
+activity: verifyEmail | attempt: 8 | maximumAttempts: 0 (unlimited) | lastFailure: activity StartToClose timeout
+```
+
+![Leads table 60 seconds after starting verification](assets/FIX-002/before-after-60s.png)
