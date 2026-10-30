@@ -43,7 +43,7 @@
 
 - [x] 8.1 Import every file in `docs/` through the UI and verify phones, years, and grouped roles appear, recording screenshots in the feature document
 - [x] 8.2 Generate a message using `{phone}` and `{yearsAtCompany}` for leads with and without those values, and verify the warning and the skipped leads in the UI
-- [ ] 8.3 Run all tests, type checks, builds, and lint in both packages, and verify they pass
+- [x] 8.3 Run all tests, type checks, builds, and lint in both packages, and verify they pass
 
 ## Workflow follow-up
 
