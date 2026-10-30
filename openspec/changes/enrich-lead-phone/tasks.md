@@ -24,8 +24,8 @@
 
 ## 5. Start endpoint
 
-- [ ] 5.1 Write API tests for 202 with started and skipped leads, the has-phone skip, `force` re-enrichment, idempotent repeated starts, request validation, and start failures, and verify they fail first
-- [ ] 5.2 Implement `POST /leads/enrich-phone` and return the enrichment fields from `GET /leads`, and verify the tests from 5.1 pass
+- [x] 5.1 Write API tests for 202 with started and skipped leads, the has-phone skip, `force` re-enrichment, idempotent repeated starts, request validation, and start failures, and verify they fail first
+- [x] 5.2 Implement `POST /leads/enrich-phone` and return the enrichment fields from `GET /leads`, and verify the tests from 5.1 pass
 
 ## 6. Frontend
 
