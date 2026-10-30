@@ -18,9 +18,9 @@
 
 ## 4. Workflow
 
-- [ ] 4.1 Write time-skipping workflow tests with mocked activities for early stop, skipped providers, the found, not found, and failed outcomes, the 90-second bound, and progress recording, and verify they fail first
-- [ ] 4.2 Implement the workflow, the lookup and save activities, and one worker per provider queue with optional rate limits, and verify the tests from 4.1 pass
-- [ ] 4.3 Add a workflow test for 429 with `Retry-After` and for cancellation of a timed-out attempt, and verify they pass
+- [x] 4.1 Write time-skipping workflow tests with mocked activities for early stop, skipped providers, the found, not found, and failed outcomes, the 90-second bound, and progress recording, and verify they fail first
+- [x] 4.2 Implement the workflow, the lookup and save activities, and one worker per provider queue with optional rate limits, and verify the tests from 4.1 pass
+- [x] 4.3 Add a workflow test for 429 with `Retry-After` and for cancellation of a timed-out attempt, and verify they pass
 
 ## 5. Start endpoint
 
