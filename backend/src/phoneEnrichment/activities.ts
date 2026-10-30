@@ -1,4 +1,5 @@
 import { Context } from '@temporalio/activity'
+import type { CallSpacer } from './callSpacing'
 import type { ProviderId } from './catalog'
 import type { ProviderSettings } from './config'
 import { lookupPhone, LookupResult } from './lookup'
@@ -37,18 +38,22 @@ export type PhoneEnrichmentActivities = ReturnType<typeof createPhoneEnrichmentA
  * The lookup activity for one provider, registered under the same name on that provider's own task queue.
  * Each attempt's request is aborted when the attempt's start-to-close time runs out, since the worker would
  * otherwise only learn of the timeout through heartbeats, and when Temporal cancels the attempt.
+ * With `spacing`, an attempt first waits for its turn, and that wait counts against its start-to-close time.
  */
 export function createLookupActivities(
   provider: PhoneProvider<unknown>,
   settings: Pick<ProviderSettings, 'apiKey' | 'baseUrl'>,
-  fetchFn?: typeof fetch
+  fetchFn?: typeof fetch,
+  spacing?: CallSpacer
 ) {
   return {
     async lookupPhone(lead: EnrichableLead): Promise<LookupResult> {
       const { cancellationSignal, info } = Context.current()
+      const startedAt = Date.now()
+      await spacing?.(cancellationSignal)
       return lookupPhone(provider, settings, lead, {
         signal: cancellationSignal,
-        timeoutMs: info.startToCloseTimeoutMs,
+        timeoutMs: info.startToCloseTimeoutMs - (Date.now() - startedAt),
         fetch: fetchFn,
       })
     },

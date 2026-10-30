@@ -249,7 +249,7 @@ sequenceDiagram
 ```
 
 - Providers implement one skip, call, and normalize contract ([decision 0005](../decisions/0005-phone-provider-abstraction.md)): Astra needs an email, Nimbus also a job title, and Orion a business email domain.
-- The workflow runs on `phone-enrichment`, and each provider's lookup runs on its own task queue with an optional `PHONE_<PROVIDER>_MAX_PER_SECOND` limit enforced by the server ([decision 0006](../decisions/0006-one-task-queue-per-phone-provider.md)).
+- The workflow runs on `phone-enrichment`, and each provider's lookup runs on its own task queue with an optional `PHONE_<PROVIDER>_MAX_PER_SECOND` limit, enforced by the server across workers and by spacing calls within the process ([decision 0006](../decisions/0006-one-task-queue-per-phone-provider.md)).
 - Lookups allow three attempts of 5, 8, and 10 seconds per provider; 400, 401, and 403 are not retried, and a 429 waits for its `Retry-After`.
 - A provider that errors is recorded and the next provider runs; the lead ends `FAILED` only when no phone was found and some provider errored.
 - Found numbers are stored as E.164 with `libphonenumber-js` when valid, and the store activities write only phone enrichment columns, so email verification can run on the same lead.

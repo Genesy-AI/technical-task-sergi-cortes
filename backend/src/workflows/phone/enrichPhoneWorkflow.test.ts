@@ -421,6 +421,22 @@ describe('phoneEnrichmentWorkerOptions', () => {
     ])
   })
 
+  it('also limits a rate-limited provider in this process, polling one task at a time', () => {
+    // The server limit alone lets bursts through, one per task queue partition and per open poll.
+    const limited = loadPhoneEnrichmentConfig({
+      ASTRA_API_KEY: 'a',
+      NIMBUS_API_KEY: 'n',
+      ORION_API_KEY: 'o',
+      PHONE_ORION_MAX_PER_SECOND: '1',
+    })
+
+    const [, astra, , orion] = phoneEnrichmentWorkerOptions({ config: limited, store })
+
+    expect(orion).toMatchObject({ maxActivitiesPerSecond: 1, maxConcurrentActivityTaskPolls: 1 })
+    expect(astra.maxActivitiesPerSecond).toBeUndefined()
+    expect(astra.maxConcurrentActivityTaskPolls).toBeUndefined()
+  })
+
   it('only starts workers for the providers in the order', () => {
     const astraOnly = loadPhoneEnrichmentConfig({ ASTRA_API_KEY: 'a', PHONE_PROVIDER_ORDER: 'ASTRA' })
 

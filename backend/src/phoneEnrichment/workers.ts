@@ -2,6 +2,7 @@ import { NativeConnection, Worker, WorkerOptions } from '@temporalio/worker'
 import path from 'path'
 import { TEMPORAL_ADDRESS, TEMPORAL_NAMESPACE } from '../temporal/config'
 import { createLookupActivities, createPhoneEnrichmentActivities } from './activities'
+import { createCallSpacer } from './callSpacing'
 import { PHONE_ENRICHMENT_TASK_QUEUE, PROVIDER_CATALOG } from './catalog'
 import { loadPhoneEnrichmentConfig, PhoneEnrichmentConfig } from './config'
 import { PROVIDERS } from './providers'
@@ -12,6 +13,8 @@ export type PhoneWorkerOptions = Omit<WorkerOptions, 'connection' | 'namespace'>
 /**
  * One worker for the lookup workflow and its persistence activities, and one per configured provider.
  * A provider's rate limit is set on its own queue, where the Temporal server enforces it across all workers.
+ * The server limit still lets short bursts through, one per queue partition and open poll, so this process also
+ * polls one task at a time at that rate, and spaces its calls by the interval (decision 0006).
  */
 export function phoneEnrichmentWorkerOptions({
   config,
@@ -31,12 +34,18 @@ export function phoneEnrichmentWorkerOptions({
 
   const providerWorkers = config.providers.map(
     ({ id, apiKey, baseUrl, maxPerSecond }): PhoneWorkerOptions => {
-      const options: PhoneWorkerOptions = {
-        taskQueue: PROVIDER_CATALOG[id].taskQueue,
-        activities: createLookupActivities(PROVIDERS[id], { apiKey, baseUrl }, fetch),
+      const taskQueue = PROVIDER_CATALOG[id].taskQueue
+      if (maxPerSecond === undefined) {
+        return { taskQueue, activities: createLookupActivities(PROVIDERS[id], { apiKey, baseUrl }, fetch) }
       }
-      if (maxPerSecond !== undefined) options.maxTaskQueueActivitiesPerSecond = maxPerSecond
-      return options
+      const spacing = createCallSpacer(1000 / maxPerSecond)
+      return {
+        taskQueue,
+        activities: createLookupActivities(PROVIDERS[id], { apiKey, baseUrl }, fetch, spacing),
+        maxTaskQueueActivitiesPerSecond: maxPerSecond,
+        maxActivitiesPerSecond: maxPerSecond,
+        maxConcurrentActivityTaskPolls: 1,
+      }
     }
   )
 

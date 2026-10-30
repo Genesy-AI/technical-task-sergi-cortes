@@ -96,6 +96,8 @@ It is independent of `verify-email-{leadId}`, and every save activity updates on
 
 Each provider's activities run on their own task queue (`phone-astra`, `phone-nimbus`, `phone-orion`) with its own worker in the backend process.
 An optional `PHONE_<PROVIDER>_MAX_PER_SECOND` sets the worker's `maxTaskQueueActivitiesPerSecond`, which the Temporal server enforces across all workers.
+During end-to-end verification, the server limit alone let bursts of three Orion calls through within 15 ms at a limit of 1 per second, because each task queue partition and open poll gets its own token.
+So a rate-limited provider's worker also sets `maxActivitiesPerSecond` and polls one task at a time, which keeps the backlog in Temporal, and spaces its calls by the interval in the lookup activity, counting that wait against the attempt's time limit.
 A 429 answer throws a retryable `ApplicationFailure` with `nextRetryDelay` taken from `Retry-After`, which the installed SDK supports.
 
 Alternatives considered:
