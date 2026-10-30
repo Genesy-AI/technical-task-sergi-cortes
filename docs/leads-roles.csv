@@ -1,0 +1,7 @@
+firstName,lastName,email,jobTitle,countryCode,companyName,yearsInRole,phoneNumber,linkedinUrl,isCurrentRole
+Grace,Hopper,grace.hopper@navy-labs.com,Analyst,US,Globex,4,+1-202-555-0143,linkedin.com/in/grace-hopper/,
+Grace,Hopper,grace.hopper@navy-labs.com,Engineer,US,Navy Labs,3,,,
+Grace,Hopper,grace.hopper@navy-labs.com,Engineering Manager,US,Navy Labs,2,,,
+Alan,Turing,alan.turing@bletchley.co.uk,Director,United Kingdom,Bletchley Park,5,+44 20 7946 0958,https://uk.linkedin.com/in/alan-turing?trk=profile,yes
+Alan,Turing,alan.turing@bletchley.co.uk,Advisor,GB,Bletchley Park,1,,,
+Katherine,Johnson,k.johnson@nasa-labs.org,Mathematician,USA,NASA Labs,ten,12-34,https://example.com/in/katherine,

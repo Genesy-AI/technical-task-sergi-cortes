@@ -43,7 +43,7 @@ export const FieldPicker: FC<FieldPickerProps> = ({ fields, onInsert }) => {
           className="w-full rounded-t-md py-2 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
         />
       </div>
-      <div className="max-h-40 overflow-y-auto p-2">
+      <div className="max-h-60 overflow-y-auto p-2">
         {groups.length === 0 ? (
           <p className="px-1 py-2 text-sm text-gray-500">{`No field matches "${search.trim()}"`}</p>
         ) : (

@@ -65,7 +65,7 @@ export const ImportPreviewTable: FC<ImportPreviewTableProps> = ({ leads, invalid
           ))}
         </tr>
       </thead>
-      <tbody className="bg-white divide-y divide-gray-200 text-sm text-gray-900 align-top">
+      <tbody className="bg-white divide-y divide-gray-200 text-sm text-gray-900 align-top whitespace-nowrap">
         {leads.map((lead) => (
           <tr key={lead.email} className={lead.status === 'duplicate' ? 'bg-amber-50/50' : 'bg-white'}>
             <td className="px-3 py-2 text-gray-500 whitespace-nowrap">{lead.rowNumbers.join(', ')}</td>
