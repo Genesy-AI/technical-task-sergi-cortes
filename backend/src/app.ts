@@ -4,6 +4,7 @@ import { StartVerification, temporalVerificationStarter } from './emailVerificat
 import { buildImport } from './leads/importLeads'
 import { emailsInRows, executeImport, findExistingEmails } from './leads/importStore'
 import { publicFieldDefinitions } from './leads/leadFields'
+import { toLeadView, withRoles } from './leads/leadView'
 import { getTemporalClient } from './temporal/client'
 import { generateMessageFromTemplate } from './utils/messageGenerator'
 
@@ -92,9 +93,9 @@ export function createApp(
   })
 
   app.get('/leads', async (req: Request, res: Response) => {
-    const leads = await prisma.lead.findMany()
+    const leads = await prisma.lead.findMany({ include: withRoles, orderBy: { id: 'asc' } })
 
-    res.json(leads)
+    res.json(leads.map(toLeadView))
   })
 
   app.patch('/leads/:id', async (req: Request, res: Response) => {

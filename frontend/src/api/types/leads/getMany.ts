@@ -20,4 +20,20 @@ export type LeadsGetManyOutput = {
   companyName: string | null
   message: string | null
   emailVerificationStatus: EmailVerificationStatus
+  phone: string | null
+  linkedinUrl: string | null
+  /** Roles in file order; exactly one is current, and `jobTitle` and `companyName` copy it. */
+  roles: LeadRole[]
+  /** Years in the current role. */
+  yearsInRole: number | null
+  /** Sum of years over the roles at the current company. */
+  yearsAtCompany: number | null
 }[]
+
+export type LeadRole = {
+  position: number
+  jobTitle: string | null
+  companyName: string | null
+  yearsInRole: number | null
+  isCurrent: boolean
+}

@@ -26,8 +26,8 @@
 
 ## 5. Leads API and table
 
-- [ ] 5.1 Return phone, LinkedIn URL, roles, current role, years in role, and years at company from `GET /leads`, and verify with API tests for the summing scenarios
-- [ ] 5.2 Add the column menu, sticky name column, truncation, `tel:` links, and safe LinkedIn links, and verify with component tests including persistence
+- [x] 5.1 Return phone, LinkedIn URL, roles, current role, years in role, and years at company from `GET /leads`, and verify with API tests for the summing scenarios
+- [x] 5.2 Add the column menu, sticky name column, truncation, `tel:` links, and safe LinkedIn links, and verify with component tests including persistence
 
 ## 6. Message composition
 

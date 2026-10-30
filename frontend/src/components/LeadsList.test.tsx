@@ -4,34 +4,21 @@ import userEvent from '@testing-library/user-event'
 import { Toaster } from 'react-hot-toast'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { api } from '../api'
-import { EmailVerificationStatus, LeadsGetManyOutput } from '../api/types/leads/getMany'
+import { EmailVerificationStatus } from '../api/types/leads/getMany'
+import { fieldsFixture, leadFixture } from '../test/fixtures'
 import { LeadsList } from './LeadsList'
 import { pollIntervalFor } from './leadsPolling'
 
 vi.mock('../api', () => ({
-  api: { leads: { getMany: vi.fn(), verifyEmails: vi.fn(), deleteMany: vi.fn() } },
+  api: { leads: { getMany: vi.fn(), getFields: vi.fn(), verifyEmails: vi.fn(), deleteMany: vi.fn() } },
 }))
 
 const getMany = vi.mocked(api.leads.getMany)
 const verifyEmails = vi.mocked(api.leads.verifyEmails)
+vi.mocked(api.leads.getFields).mockResolvedValue({ fields: fieldsFixture })
 
-const lead = (
-  id: number,
-  firstName: string,
-  status: EmailVerificationStatus
-): LeadsGetManyOutput[number] => ({
-  id,
-  createdAt: '2026-10-30T00:00:00.000Z',
-  updatedAt: '2026-10-30T00:00:00.000Z',
-  firstName,
-  lastName: 'Test',
-  email: `${firstName.toLowerCase()}@example.com`,
-  jobTitle: null,
-  countryCode: null,
-  companyName: null,
-  message: null,
-  emailVerificationStatus: status,
-})
+const lead = (id: number, firstName: string, status: EmailVerificationStatus) =>
+  leadFixture(id, firstName, status)
 
 const renderList = () => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
