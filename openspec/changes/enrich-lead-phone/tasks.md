@@ -7,8 +7,8 @@
 
 ## 2. Configuration and data model
 
-- [ ] 2.1 Write tests for loading and validating provider configuration, including a missing key and the provider order, and verify they fail first
-- [ ] 2.2 Implement configuration loading, `backend/.env.sample`, and README setup notes, and verify the tests from 2.1 pass and no key appears in source
+- [x] 2.1 Write tests for loading and validating provider configuration, including a missing key and the provider order, and verify they fail first
+- [x] 2.2 Implement configuration loading, `backend/.env.sample`, and README setup notes, and verify the tests from 2.1 pass and no key appears in source
 - [ ] 2.3 Write a migration test for the enrichment fields and `phoneSource = IMPORT` on existing phones, then add the schema and migration, and verify the test passes
 
 ## 3. Providers

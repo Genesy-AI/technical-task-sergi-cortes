@@ -1,3 +1,4 @@
+import './loadEnv'
 import { PrismaClient } from '@prisma/client'
 import { createApp } from './app'
 import { runTemporalWorker } from './worker'
