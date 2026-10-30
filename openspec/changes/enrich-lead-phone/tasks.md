@@ -13,8 +13,8 @@
 
 ## 3. Providers
 
-- [ ] 3.1 Write tests with stubbed `fetch` for each provider's input building, skip reasons, response normalizing (including Nimbus's `phoneNmbr` and `number`), and error mapping for 400, 401, 429, 5xx, and timeouts, and verify they fail first
-- [ ] 3.2 Implement the provider abstraction, the three providers, business-domain derivation with `free-email-domains`, and E.164 formatting with `libphonenumber-js`, and verify the tests from 3.1 pass
+- [x] 3.1 Write tests with stubbed `fetch` for each provider's input building, skip reasons, response normalizing (including Nimbus's `phoneNmbr` and `number`), and error mapping for 400, 401, 429, 5xx, and timeouts, and verify they fail first
+- [x] 3.2 Implement the provider abstraction, the three providers, business-domain derivation with `free-email-domains`, and E.164 formatting with `libphonenumber-js`, and verify the tests from 3.1 pass
 
 ## 4. Workflow
 

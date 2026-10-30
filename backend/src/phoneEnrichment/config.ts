@@ -1,4 +1,4 @@
-import { isProviderId, PROVIDER_IDS, ProviderId } from './providerIds'
+import { isProviderId, PROVIDER_IDS, ProviderId } from './catalog'
 
 /** How to reach one provider. Keys are secrets and only ever come from the environment. */
 export interface ProviderSettings {

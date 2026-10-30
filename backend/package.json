@@ -39,6 +39,8 @@
     "@temporalio/worker": "~1.13.2",
     "@temporalio/workflow": "~1.13.2",
     "express": "^5.1.0",
-    "i18n-iso-countries": "^7.14.0"
+    "free-email-domains": "^1.15.20",
+    "i18n-iso-countries": "^7.14.0",
+    "libphonenumber-js": "^1.13.15"
   }
 }
