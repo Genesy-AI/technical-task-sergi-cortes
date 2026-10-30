@@ -7,8 +7,8 @@
 
 ## 2. Data model
 
-- [ ] 2.1 Write a migration test that seeds leads before the migration and asserts each gets one current role copied from its job title and company, and verify it fails first
-- [ ] 2.2 Add `phone`, `linkedinUrl`, and the `leadRole` table with the migration, and verify the test from 2.1 passes and `prisma migrate diff` reports no drift
+- [x] 2.1 Write a migration test that seeds leads before the migration and asserts each gets one current role copied from its job title and company, and verify it fails first
+- [x] 2.2 Add `phone`, `linkedinUrl`, and the `leadRole` table with the migration, and verify the test from 2.1 passes and `prisma migrate diff` reports no drift
 
 ## 3. Lead field registry and value rules
 
