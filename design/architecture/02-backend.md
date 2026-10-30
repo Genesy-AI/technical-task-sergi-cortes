@@ -21,7 +21,7 @@ flowchart TB
     CC[utils/countryCode.ts]
     ROUTES --> CC
     WF[workflows/workflows.ts<br/>verifyEmailWorkflow]
-    ACT[workflows/activities/utils.ts<br/>verifyEmail]
+    ACT[workflows/activities<br/>verifyEmail, saveVerificationResult]
     WORKER[worker.ts]
     PRISMA[(Prisma Client)]
 
@@ -57,15 +57,15 @@ erDiagram
         String countryCode "nullable"
         String companyName "nullable"
         String message "nullable, last generated message"
-        Boolean emailVerified "nullable, null means not verified yet"
+        EmailVerificationStatus emailVerificationStatus "UNVERIFIED, PENDING, VERIFIED, INVALID, FAILED"
     }
 ```
 
 - The Prisma model name is lowercase `lead`, which is unusual for Prisma conventions.
 - There are no indexes or unique constraints beyond the primary key, so email duplicates are allowed.
 - `message` stores only the latest generated message, so history is lost on every generation.
-- `emailVerified` is a tri-state flag, where `null` means "unknown" and is rendered as a question mark in the UI.
-- Enrichment state such as "in progress" or "no data found" has no representation in the model yet.
+- `emailVerificationStatus` is an enum that defaults to `UNVERIFIED`, and `PENDING` drives the table's polling.
+- Phone enrichment state has no representation in the model yet, and is planned in the `enrich-lead-phone` change.
 - The sample CSVs already carry `yearsInRole` and `phoneNumber` columns that the model does not have.
 
 ### Migrations
@@ -76,6 +76,7 @@ erDiagram
 | `20250904113722_add_message_field` | Adds `message`. |
 | `20250904134219_make_last_name_email_required` | Rebuilds the table to make `lastName` and `email` required. |
 | `20250905104559_add_email_verified_column` | Adds `emailVerified` with default `NULL`. |
+| `20261030090000_replace_email_verified_with_status` | Replaces `emailVerified` with `emailVerificationStatus`, mapping true to `VERIFIED`, false to `INVALID`, and null to `UNVERIFIED`. |
 
 The datasource URL is hardcoded in `schema.prisma` and the `dev.db` file is committed, so local data is shared through git.
 
@@ -95,7 +96,7 @@ None are authenticated, rate limited, or paginated.
 | `POST` | `/leads/generate-messages` | Render a template for many leads | `{ leadIds, template }` | `{ success, generatedCount, errors[] }` |
 | `POST` | `/leads/bulk` | Import many leads from parsed CSV | `{ leads[] }` | `{ success, importedCount, duplicatesSkipped, invalidLeads, errors[] }` |
 | `POST` | `/leads/country-codes/normalize` | Preview how country values will be stored | `{ values: string[] }`, at most 1000 values of at most 100 characters | `{ results: [{ value, code, outcome }] }` |
-| `POST` | `/leads/verify-emails` | Verify emails through Temporal | `{ leadIds }` | `{ success, verifiedCount, results[], errors[] }` |
+| `POST` | `/leads/verify-emails` | Start background email verification | `{ leadIds }`, at most 500 positive integers | `202 { started[], failed[{ leadId, error }] }`, or 404 when no id matches |
 
 ### Handler patterns
 
@@ -151,40 +152,38 @@ input --> trim --> empty?                     --> null (empty)
 
 ## Temporal integration
 
+Email verification follows the start-then-observe pattern from [decision 0002](../decisions/0002-start-then-observe-background-work.md), introduced by the [fix-email-verification-stall](../../openspec/changes/fix-email-verification-stall/design.md) change.
+
 ```mermaid
 sequenceDiagram
+    participant UI as Leads table
     participant API as Express handler
-    participant C as Temporal Client
     participant S as Temporal Server
     participant W as Worker (same process)
-    participant A as verifyEmail activity
+    participant DB as SQLite
 
-    API->>C: Connection.connect(localhost:7233)
-    loop for each lead, sequentially
-        API->>C: workflow.execute(verifyEmailWorkflow, id verify-email-{id}-{Date.now()})
-        C->>S: StartWorkflowExecution
-        S->>W: Workflow task
-        W->>S: Schedule activity (startToClose 1s, default retry)
-        S->>W: Activity task
-        W->>A: verifyEmail(email)
-        A-->>W: boolean
-        W-->>S: Workflow result
-        S-->>C: Result
-        C-->>API: boolean
-        API->>API: prisma.lead.update(emailVerified)
+    UI->>API: POST /leads/verify-emails { leadIds }
+    API->>DB: set emailVerificationStatus = PENDING
+    par one workflow per lead
+        API->>S: start verifyEmailWorkflow(leadId, email), id verify-email-{leadId}
     end
-    API->>C: connection.close()
+    API-->>UI: 202 { started, failed }
+    S->>W: verifyEmail(email), 5 s limit, 3 attempts, heartbeat 2 s
+    W->>DB: saveVerificationResult(leadId, VERIFIED | INVALID | FAILED)
+    loop every 2 s while any lead is PENDING
+        UI->>API: GET /leads
+    end
 ```
 
-- The worker registers all workflows from `workflows/index.ts` and all activities from `workflows/activities/index.ts`.
-- The workflow is a one-line wrapper around a single activity with a `startToCloseTimeout` of one second.
-- No retry policy is set, so the Temporal default applies: unlimited attempts with exponential backoff.
-- The activity is a mock: emails containing `john.doe` or `+` fail verification, and emails containing `jane.smith` sleep for 20 seconds.
-- Workflow IDs include `Date.now()`, so the same lead can be verified concurrently and the run is not idempotent.
-- The HTTP request awaits every workflow result before responding, so it is coupled to workflow duration.
+- `backend/src/emailVerification/start.ts` starts workflows through one lazily created client from `backend/src/temporal/client.ts`, with `USE_EXISTING` and `ALLOW_DUPLICATE`, so a repeated start joins the running workflow.
+- `backend/src/temporal/config.ts` holds the address, namespace, and task queue, read from `TEMPORAL_ADDRESS`, `TEMPORAL_NAMESPACE`, and `TEMPORAL_TASK_QUEUE` with local defaults.
+- The worker builds its activities with `createActivities(prisma)`, so `saveVerificationResult` can write the outcome.
+- `verifyEmail` allows three attempts of five seconds with one and two second backoff, so a check that never answers ends `FAILED` in about 18 seconds.
+- The workflow catches the final activity failure and records `FAILED`, and it has no execution timeout, because a timed-out workflow could not record anything.
+- The activity is a mock: emails containing `john.doe` or `+` fail verification, and emails containing `jane.smith` wait 20 seconds while heartbeating, so timed-out attempts are cancelled instead of sleeping on.
+- Workflow tests use `@temporalio/testing` with time skipping, and API tests run the endpoint against the same test server.
 
-The combination of a one-second timeout, a 20-second activity, and unlimited retries produces a workflow that never completes.
-That is the root cause of the "email verification stalls" bug described in the README.
+Before the fix, a one-second timeout, a 20-second activity, and unlimited retries produced a workflow that never completed, inside a request that waited for it ([FIX-002](../fixes/FIX-002-email-verification-stall.md)).
 
 ## Cross-cutting concerns
 

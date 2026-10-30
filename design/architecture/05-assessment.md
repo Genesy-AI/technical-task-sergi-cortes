@@ -18,7 +18,7 @@ These are bugs that affect users or block the build.
 
 | ID | Finding | Location | Impact |
 | --- | --- | --- | --- |
-| D1 | Email verification never completes for slow emails because the activity times out after one second and retries forever. | `backend/src/workflows/workflows.ts` | README bug "Email verification stalls". |
+| D1 | Email verification never completes for slow emails because the activity times out after one second and retries forever. | `backend/src/workflows/workflows.ts` | README bug "Email verification stalls". **Resolved** by [FIX-002](../fixes/FIX-002-email-verification-stall.md). |
 | D2 | Country codes are not validated anywhere, so invalid values from CSV are stored and shown. | `frontend/src/utils/csvParser.ts`, `/leads/bulk` | README bug "CSV country codes". **Resolved** by [FIX-001](../fixes/FIX-001-csv-country-codes.md). |
 | D3 | Frontend build fails with TS2741 because the optimistic lead lacks `emailVerified`. | `frontend/src/api/mutations/useApiMutation.ts` | `pnpm build` fails. **Resolved** in fix-csv-country-codes task 2.3. |
 | D4 | Frontend lint fails because ESLint 9 needs a flat config. | `frontend/.eslintrc.cjs` | `pnpm lint` fails. **Resolved** in fix-csv-country-codes task 2.3. |
@@ -35,8 +35,8 @@ These are bugs that affect users or block the build.
 | A1 | All routes, validation, business rules, and persistence sit in one file. | Hard to test, review, and extend, and every feature edits the same file. |
 | A2 | Lead fields are listed separately in the Prisma model, two backend modules, four frontend modules, and the table markup. | Adding a field needs many coordinated edits, which the README new-fields task exposes. |
 | A3 | No shared contract or runtime validation between frontend and backend. | Contracts have already drifted, see D5, D6, and the nullable types. |
-| A4 | Long-running work runs inside the HTTP request. | Requests hang, there is no progress feedback, and proxies will time out. |
-| A5 | Workflow IDs include a timestamp. | No idempotency, the same lead can be processed many times in parallel. |
+| A4 | Long-running work runs inside the HTTP request. | Requests hang, there is no progress feedback, and proxies will time out. **Resolved** for email verification by [decision 0002](../decisions/0002-start-then-observe-background-work.md). |
+| A5 | Workflow IDs include a timestamp. | No idempotency, the same lead can be processed many times in parallel. **Resolved**: ids are now `verify-email-{leadId}`. |
 | A6 | The Temporal worker runs inside the API process. | The API cannot start without Temporal, and the two cannot scale separately. |
 | A7 | Batch operations run sequential queries without transactions. | Slow for large inputs and leaves partial writes on failure. |
 | A8 | Components are large and mix data, state, and markup, and both modals duplicate the same shell logic. | Harder to test and to keep the UI consistent. |
@@ -59,7 +59,7 @@ These are bugs that affect users or block the build.
 
 - `GET /leads` returns every row with no pagination, and every mutation refetches the full list.
 - Bulk import and message generation issue one query per lead.
-- Email verification opens a new Temporal connection per request and runs workflows sequentially.
+- Email verification shares one Temporal client and starts workflows concurrently, while the table polls every two seconds only while a verification is pending.
 - These are acceptable for the sample data sizes but will not hold at production volumes.
 
 ## Testability and quality gates

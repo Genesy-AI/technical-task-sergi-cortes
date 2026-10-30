@@ -1,5 +1,13 @@
 export type LeadsGetManyInput = undefined
 
+/**
+ * - `UNVERIFIED`: never checked.
+ * - `PENDING`: a verification is running.
+ * - `VERIFIED` / `INVALID`: the check accepted or rejected the email.
+ * - `FAILED`: the check could not complete; it can be retried.
+ */
+export type EmailVerificationStatus = 'UNVERIFIED' | 'PENDING' | 'VERIFIED' | 'INVALID' | 'FAILED'
+
 export type LeadsGetManyOutput = {
   id: number
   createdAt: string
@@ -11,5 +19,5 @@ export type LeadsGetManyOutput = {
   countryCode: string | null
   companyName: string | null
   message: string | null
-  emailVerified: boolean | null
+  emailVerificationStatus: EmailVerificationStatus
 }[]

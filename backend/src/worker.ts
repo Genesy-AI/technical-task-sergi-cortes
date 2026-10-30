@@ -1,17 +1,17 @@
+import { PrismaClient } from '@prisma/client'
 import { NativeConnection, Worker } from '@temporalio/worker'
-import * as activities from './workflows/activities'
+import { TEMPORAL_ADDRESS, TEMPORAL_NAMESPACE, TEMPORAL_TASK_QUEUE } from './temporal/config'
+import { createActivities } from './workflows/activities'
 
-export async function runTemporalWorker() {
-  const connection = await NativeConnection.connect({
-    address: 'localhost:7233',
-  })
+export async function runTemporalWorker(prisma: PrismaClient) {
+  const connection = await NativeConnection.connect({ address: TEMPORAL_ADDRESS })
   try {
     const worker = await Worker.create({
       connection,
-      namespace: 'default',
-      taskQueue: 'myQueue',
+      namespace: TEMPORAL_NAMESPACE,
+      taskQueue: TEMPORAL_TASK_QUEUE,
       workflowsPath: require.resolve('./workflows'),
-      activities,
+      activities: createActivities(prisma),
     })
 
     await worker.run()

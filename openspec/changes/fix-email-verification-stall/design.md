@@ -133,6 +133,7 @@ The `fix-csv-country-codes` change needs the same split, and whichever change la
 
 - [The workflow fails to start after leads were set to `PENDING`] → The endpoint sets those leads to `FAILED` and reports them in the response.
 - [Rows stay `PENDING` while the worker is down] → Accepted as durable behavior, and documented in the architecture notes.
+- [A start lands in the milliseconds after a running workflow saved its outcome but before it closed, so the endpoint marks the lead `PENDING` and joins a run that will not save again] → Accepted because the window is a few milliseconds and a later start recovers it; found during implementation.
 - [The breaking API change affects other clients] → The only known client is this frontend, updated in the same change.
 - [Polling load with many open tabs] → Polling runs only while a lead is `PENDING`, and pagination is a separate improvement.
 - [Time-skipping tests behave differently from a real server] → An end-to-end check against `temporal server start-dev` confirms the bound.

@@ -1,13 +1,22 @@
 import { PrismaClient } from '@prisma/client'
 import express, { Express, Request, Response } from 'express'
-import { Connection, Client } from '@temporalio/client'
-import { verifyEmailWorkflow } from './workflows'
+import { StartVerification, temporalVerificationStarter } from './emailVerification/start'
+import { getTemporalClient } from './temporal/client'
 import { normalizeCountryCode } from './utils/countryCode'
 import { generateMessageFromTemplate } from './utils/messageGenerator'
 
 /** Upper bounds that keep the normalize endpoint cheap; a preview sends only distinct values. */
 const MAX_NORMALIZE_VALUES = 1000
 const MAX_COUNTRY_VALUE_LENGTH = 100
+/** Upper bound on leads per verification request, so one request cannot start unbounded work. */
+const MAX_VERIFY_LEADS = 500
+
+const errorMessage = (error: unknown) => (error instanceof Error ? error.message : 'Unknown error')
+
+export interface AppDependencies {
+  /** Defaults to starting a Temporal workflow through the shared client. */
+  startEmailVerification?: StartVerification
+}
 
 /** Clients may send numeric codes as JSON numbers, so any non-null value is read as text. */
 const toCountryCode = (value: unknown): string | null =>
@@ -17,7 +26,10 @@ const toCountryCode = (value: unknown): string | null =>
  * Builds the HTTP API without starting a server or the Temporal worker,
  * so tests can exercise routes against their own database.
  */
-export function createApp(prisma: PrismaClient): Express {
+export function createApp(
+  prisma: PrismaClient,
+  { startEmailVerification = temporalVerificationStarter(getTemporalClient) }: AppDependencies = {}
+): Express {
   const app = express()
   app.use(express.json())
 
@@ -285,63 +297,58 @@ export function createApp(prisma: PrismaClient): Express {
     }
   })
 
+  // Starts one background verification per lead and returns at once; the table polls for outcomes.
   app.post('/leads/verify-emails', async (req: Request, res: Response) => {
-    if (!req.body || typeof req.body !== 'object') {
-      return res.status(400).json({ error: 'Request body is required and must be valid JSON' })
-    }
+    const leadIds: unknown = req.body?.leadIds
 
-    const { leadIds } = req.body as { leadIds?: number[] }
-
-    if (!Array.isArray(leadIds) || leadIds.length === 0) {
-      return res.status(400).json({ error: 'leadIds must be a non-empty array' })
+    if (
+      !Array.isArray(leadIds) ||
+      leadIds.length === 0 ||
+      leadIds.length > MAX_VERIFY_LEADS ||
+      !leadIds.every((id) => Number.isInteger(id) && id > 0)
+    ) {
+      return res
+        .status(400)
+        .json({ error: `leadIds must be a non-empty array of at most ${MAX_VERIFY_LEADS} positive integers` })
     }
 
     try {
       const leads = await prisma.lead.findMany({
-        where: { id: { in: leadIds.map((id) => Number(id)) } },
+        where: { id: { in: [...new Set(leadIds as number[])] } },
+        select: { id: true, email: true },
+        orderBy: { id: 'asc' },
       })
 
       if (leads.length === 0) {
         return res.status(404).json({ error: 'No leads found with the provided IDs' })
       }
 
-      const connection = await Connection.connect({ address: 'localhost:7233' })
-      const client = new Client({ connection, namespace: 'default' })
+      // Mark first, so the response and the next poll already show progress.
+      await prisma.lead.updateMany({
+        where: { id: { in: leads.map((lead) => lead.id) } },
+        data: { emailVerificationStatus: 'PENDING' },
+      })
 
-      let verifiedCount = 0
-      const results: Array<{ leadId: number; emailVerified: boolean }> = []
-      const errors: Array<{ leadId: number; leadName: string; error: string }> = []
+      const outcomes = await Promise.allSettled(leads.map((lead) => startEmailVerification(lead)))
+      const started: number[] = []
+      const failed: Array<{ leadId: number; error: string }> = []
+      outcomes.forEach((outcome, index) => {
+        const leadId = leads[index].id
+        if (outcome.status === 'fulfilled') started.push(leadId)
+        else failed.push({ leadId, error: errorMessage(outcome.reason) })
+      })
 
-      for (const lead of leads) {
-        try {
-          const isVerified = await client.workflow.execute(verifyEmailWorkflow, {
-            taskQueue: 'myQueue',
-            workflowId: `verify-email-${lead.id}-${Date.now()}`,
-            args: [lead.email],
-          })
-
-          await prisma.lead.update({
-            where: { id: lead.id },
-            data: { emailVerified: Boolean(isVerified) },
-          })
-
-          results.push({ leadId: lead.id, emailVerified: isVerified })
-          verifiedCount += 1
-        } catch (error) {
-          errors.push({
-            leadId: lead.id,
-            leadName: `${lead.firstName} ${lead.lastName}`.trim(),
-            error: error instanceof Error ? error.message : 'Unknown error',
-          })
-        }
+      if (failed.length > 0) {
+        await prisma.lead.updateMany({
+          where: { id: { in: failed.map((f) => f.leadId) } },
+          data: { emailVerificationStatus: 'FAILED' },
+        })
       }
 
-      await connection.close()
-
-      res.json({ success: true, verifiedCount, results, errors })
+      res.status(202).json({ started, failed })
     } catch (error) {
-      console.error('Error verifying emails:', error)
-      res.status(500).json({ error: 'Failed to verify emails' })
+      console.error('Error starting email verification:', error)
+      res.status(500).json({ error: 'Failed to start email verification' })
     }
   })
 
