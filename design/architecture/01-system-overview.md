@@ -61,7 +61,7 @@ flowchart TB
 
 - The Express server and the Temporal worker share one Node process, started from `backend/src/index.ts`.
 - If the worker fails to connect to Temporal, the whole process exits, so the API cannot run without Temporal.
-- The API opens a new Temporal client connection on every email verification request.
+- The API shares one lazily created Temporal client across requests, and starts verification workflows without waiting for them.
 - Addresses and ports are hardcoded: API port `4000`, Temporal `localhost:7233`, namespace `default`, task queue `myQueue`.
 - The frontend reads the API base URL from `VITE_API_URL` in `frontend/.env`.
 

@@ -35,7 +35,7 @@ flowchart TB
 - Table columns are hardcoded in JSX, so each new lead field requires editing header and row markup.
 - The Enrich dropdown has no click-outside handler and no keyboard navigation.
 - "Guess Gender" is a placeholder that shows an error toast.
-- Email verification state is shown as emoji next to the email, without a pending state during verification.
+- `EmailVerificationCell` shows each lead's verification status under the email: a spinner while verifying, labelled icons for the outcomes, and a Retry button when a check could not complete.
 - The error state offers a full page reload instead of a query refetch.
 
 ## API client layer
@@ -74,7 +74,7 @@ The fix-csv-country-codes change added the field, and [an improvement note](../i
 
 - Server state lives in TanStack Query under the single key `['leads', 'getMany']`.
 - Every mutation invalidates that key on success, so the whole table is refetched after each action.
-- The leads query disables retries.
+- The leads query disables retries, and refetches every two seconds while any lead's verification is `PENDING` (`leadsPolling.ts`).
 - UI state such as selection and modal visibility is local `useState` in `LeadsList`.
 - Selected lead IDs are not pruned after a refetch, so a deleted lead can remain selected.
 - `QueryClient` uses library defaults, and React Query Devtools are rendered unconditionally.
@@ -110,4 +110,4 @@ The fix-csv-country-codes change added the field, and [an improvement note](../i
 - Prettier uses no semicolons, single quotes, and a 110 character print width.
 - ESLint 9 runs from a flat `eslint.config.js` built on `typescript-eslint`, and `pnpm lint` passes.
 - Vitest runs in jsdom with Testing Library, and `csvParser` and `CsvImportModal` have tests.
-- `LeadsList.tsx` and `api/types/leads/verifyEmails.ts` are not formatted with the project's Prettier config.
+- `LeadsList` has component tests, and the shared test setup stubs `matchMedia`, which jsdom lacks and `react-hot-toast` reads.

@@ -12,7 +12,7 @@ The wireframes in `docs/ui-wireframes.png` show the intended UX for the table, t
 | Delete leads | Toolbar "Delete" | `DELETE /leads` | Working, no confirmation dialog. |
 | Import leads from CSV | Toolbar "Import CSV" | `POST /leads/bulk`, `POST /leads/country-codes/normalize` | Working, and countries are converted to ISO codes or left blank. |
 | Generate messages | Enrich, then "Generate Messages" | `POST /leads/generate-messages` | Working. |
-| Verify emails | Enrich, then "Verify Email" | `POST /leads/verify-emails` and Temporal | Hangs for some leads. |
+| Verify emails | Enrich, then "Verify Email" | `POST /leads/verify-emails` and Temporal | Working in the background, with per-row progress and outcomes. |
 | Guess gender | Enrich, then "Guess Gender" | none | Placeholder toast only. |
 | Create, read, update, delete one lead | No UI | `POST`, `GET`, `PATCH`, `DELETE /leads/:id` | API only, create and update contracts are broken. |
 
@@ -117,20 +117,23 @@ sequenceDiagram
     participant DB as SQLite
 
     U->>L: Enrich, then Verify Email
+    L->>L: close the menu
     L->>API: POST /leads/verify-emails { leadIds }
-    loop each lead, sequentially
-        API->>T: execute verifyEmailWorkflow(email)
-        Note over T: Activity timeout 1s, unlimited retries.<br/>jane.smith sleeps 20s and never succeeds.
-        T-->>API: boolean
-        API->>DB: update emailVerified
+    API->>DB: mark leads PENDING
+    API->>T: start one verifyEmailWorkflow per lead
+    API-->>L: 202 { started, failed }
+    L-->>U: "Verification started for N leads", spinners per row
+    T->>DB: each workflow saves VERIFIED, INVALID, or FAILED
+    loop every 2 s while any lead is PENDING
+        L->>API: GET /leads
     end
-    API-->>L: verifiedCount, results, errors
-    L-->>U: toast, table refetches
+    L-->>U: each row shows its outcome, with Retry when it failed
 ```
 
-- The HTTP request stays open until every workflow finishes.
-- When any selected lead hits the slow path, the request never returns and the UI shows no progress.
-- The menu stays open during the request and the button has no pending state.
+- The request returns at once, and each lead's outcome appears on its own as soon as its workflow ends.
+- A check that never answers ends as "Couldn't verify" in about 18 seconds, and the user can retry it from the row.
+- Starting again while a lead is pending joins the running verification instead of starting a second one.
+- This was the fix for the README's "Email verification stalls" bug, see [FIX-002](../fixes/FIX-002-email-verification-stall.md).
 
 ## Features requested by the README
 
@@ -140,5 +143,5 @@ These features are not implemented yet and are listed here to show where they fi
 | --- | --- |
 | New fields: phone number, years at company, LinkedIn URL | Prisma model and migration, bulk import mapping, `messageGenerator` allow-list and `Lead` type, frontend types, `csvParser` switch, `CsvImportModal` mapping and help text, `MessageTemplateModal` field list, `LeadsList` columns. |
 | Enrich phone with three providers in sequence | New Temporal workflow and provider activities, a provider abstraction, a workflow ID per lead for idempotency, an asynchronous start endpoint, a status representation on the lead, and progress feedback in the table. |
-| Email verification feedback | Activity timeout and retry policy, asynchronous start with status polling or streaming, per-lead pending state in the UI. |
+| Email verification feedback | Done by the fix-email-verification-stall change, see [FIX-002](../fixes/FIX-002-email-verification-stall.md). |
 | Country code validation | Done by the fix-csv-country-codes change, see [FIX-001](../fixes/FIX-001-csv-country-codes.md). |

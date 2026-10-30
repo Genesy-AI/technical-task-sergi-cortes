@@ -36,9 +36,9 @@
 
 ## 7. Documentation
 
-- [ ] 7.1 Record the start-then-observe pattern and per-lead workflow ids as a decision in `design/decisions`, linked to this change, and verify the file exists
-- [ ] 7.2 Update `design/architecture/02-backend.md`, `03-frontend.md`, and `04-features.md` for the new flow and status model, and verify the defect is marked resolved in `05-assessment.md`
-- [ ] 7.3 Add the fix and the breaking API change to `CHANGELOG.md`, and verify the entry follows Keep a Changelog
+- [x] 7.1 Record the start-then-observe pattern and per-lead workflow ids as a decision in `design/decisions`, linked to this change, and verify the file exists
+- [x] 7.2 Update `design/architecture/02-backend.md`, `03-frontend.md`, and `04-features.md` for the new flow and status model, and verify the defect is marked resolved in `05-assessment.md`
+- [x] 7.3 Add the fix and the breaking API change to `CHANGELOG.md`, and verify the entry follows Keep a Changelog
 
 ## 8. End-to-end verification
 
