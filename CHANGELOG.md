@@ -30,6 +30,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - A grouped, searchable field picker in the message composer, with warnings for fields missing in some selected leads.
 - `docs/leads-roles.csv` sample with people who held several roles.
 - Main OpenSpec specs `lead-profile`, `lead-import`, `message-composition`, and `leads-table`, synced from the archived `add-lead-fields` change.
+- Phone enrichment that tries Astra Dialer, Nimbus Lookup, and Orion Connect in order until one finds a phone, as one Temporal workflow per lead ([feature](design/features/enrich-lead-phone.md)).
+- `POST /leads/enrich-phone { leadIds, force? }`, which skips leads that have a phone unless `force` is set, and responds `202 { started, skipped, failed }`.
+- Lead fields `phoneSource`, `phoneEnrichmentStatus`, `phoneEnrichmentProgress`, `phoneEnrichmentAttempts`, and `phoneEnrichedAt`, with existing phones marked as imported.
+- An "Enrich Phone" action, per-row progress with the provider being tried, the source of a found phone, Retry for failed lookups, and a confirmed Re-enrich.
+- `backend/.env` loading at startup, with provider keys, base URLs, `PHONE_PROVIDER_ORDER`, and per-provider `PHONE_<PROVIDER>_MAX_PER_SECOND` limits documented in `backend/.env.sample`.
+- Decisions [0005](design/decisions/0005-phone-provider-abstraction.md) and [0006](design/decisions/0006-one-task-queue-per-phone-provider.md) on the provider abstraction and per-provider task queues.
 
 ### Changed
 
@@ -41,7 +47,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **BREAKING:** imports detect existing leads by email instead of first and last name, and rows sharing an email become one lead with several roles.
 - **BREAKING:** `POST /leads/country-codes/normalize` is removed in favor of `POST /leads/import/preview`.
 - The leads table pins the selection and name columns while the other columns scroll horizontally.
-- Ignore local agent worktrees and pnpm-generated `pnpm-workspace.yaml` files in git.
+- Ignore local agent worktrees in git, and track each package's `pnpm-workspace.yaml`, which records the allowed dependency build scripts.
 - The bulk import converts country values to ISO 3166-1 alpha-2 codes from codes, ISO numbers, the `UK` and `EL` aliases, and English names, and leaves unrecognized values blank.
 - The frontend lints with an ESLint 9 flat config.
 

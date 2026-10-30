@@ -65,7 +65,7 @@ Rejected because it would miss regional providers and need constant upkeep.
 ### Decision 3: One workflow per lead, providers as separate activities
 
 ```
-enrichPhoneWorkflow(leadId, { force })
+enrichPhoneWorkflow(leadId)
   lead = loadLead(leadId)
   attempts = []
   for provider in config.order:
@@ -129,7 +129,8 @@ The backend loads the file with `process.loadEnvFile` when present, validates th
 
 ### Decision 8: Start endpoint and UI
 
-`POST /leads/enrich-phone` takes `{ leadIds, force }`, skips leads with a phone unless `force` is true, sets started leads to `PENDING`, starts workflows concurrently, and responds 202 with `{ started, skipped }`.
+`POST /leads/enrich-phone` takes `{ leadIds, force }`, skips leads with a phone unless `force` is true, sets started leads to `PENDING`, starts workflows concurrently, and responds 202 with `{ started, skipped, failed }`.
+During implementation, `force` stayed in the endpoint, so the workflow takes only the lead id, and `failed` lists leads whose workflow could not be started; they are marked `FAILED`.
 The Enrich menu gets "Enrich Phone", and a row with a phone gets "Re-enrich phone" behind a confirmation.
 The phone cell shows "Trying Nimbus Lookup (2/3)" while pending, the phone with a source badge when found, "No data found", or "Failed" with a retry button.
 The leads query's existing poll-while-pending condition from the email fix extends to `phoneEnrichmentStatus`.

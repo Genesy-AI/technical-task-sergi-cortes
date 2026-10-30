@@ -34,8 +34,8 @@
 
 ## 7. Documentation
 
-- [ ] 7.1 Record the provider abstraction and per-provider task queue decisions in `design/decisions`, linked to this change, and verify the files exist
-- [ ] 7.2 Update `design/architecture` and `CHANGELOG.md` for the new workflow, endpoint, configuration, and fields, and verify the links resolve
+- [x] 7.1 Record the provider abstraction and per-provider task queue decisions in `design/decisions`, linked to this change, and verify the files exist
+- [x] 7.2 Update `design/architecture` and `CHANGELOG.md` for the new workflow, endpoint, configuration, and fields, and verify the links resolve
 
 ## 8. End-to-end verification
 

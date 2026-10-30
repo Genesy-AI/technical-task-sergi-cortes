@@ -13,6 +13,7 @@ The wireframes in `docs/ui-wireframes.png` show the intended UX for the table, t
 | Import leads from CSV | Toolbar "Import CSV" | `POST /leads/import/preview`, `POST /leads/bulk` | Working, with people grouped by email into role histories and invalid values blanked with notes. |
 | Generate messages | Enrich, then "Generate Messages" | `POST /leads/generate-messages` | Working, with every templatable field and missing-field warnings. |
 | Verify emails | Enrich, then "Verify Email" | `POST /leads/verify-emails` and Temporal | Working in the background, with per-row progress and outcomes. |
+| Enrich phone | Enrich, then "Enrich Phone", or Retry and Re-enrich in the row | `POST /leads/enrich-phone` and Temporal | Working in the background, trying Astra, Nimbus, and Orion in order with per-row progress. |
 | Guess gender | Enrich, then "Guess Gender" | none | Placeholder toast only. |
 | Create, read, update, delete one lead | No UI | `POST`, `GET`, `PATCH`, `DELETE /leads/:id` | API only, create and update contracts are broken. |
 
@@ -139,6 +140,35 @@ sequenceDiagram
 - Starting again while a lead is pending joins the running verification instead of starting a second one.
 - This was the fix for the README's "Email verification stalls" bug, see [FIX-002](../fixes/FIX-002-email-verification-stall.md).
 
+## Phone enrichment
+
+```mermaid
+sequenceDiagram
+    actor U as User
+    participant L as LeadsList
+    participant API as Express
+    participant T as Temporal
+    participant DB as SQLite
+
+    U->>L: Enrich, then Enrich Phone
+    L->>L: close the menu
+    L->>API: POST /leads/enrich-phone { leadIds }
+    API->>DB: mark leads without a phone PENDING
+    API->>T: start one enrichPhoneWorkflow per lead
+    API-->>L: 202 { started, skipped, failed }
+    L-->>U: "Phone lookup started for N leads", skipped count
+    T->>DB: progress per provider, then FOUND, NOT_FOUND, or FAILED
+    loop every 2 s while any lead is PENDING
+        L->>API: GET /leads
+    end
+    L-->>U: "Trying Nimbus Lookup (2/3)", then the phone with its provider
+```
+
+- Leads that already have a phone are skipped, and the row's Re-enrich button replaces the phone only after a confirmation.
+- Providers that cannot be asked are skipped with a reason: Nimbus without a job title, Orion for free email addresses.
+- "No data found" and "Lookup failed" show each provider's result on hover, and a failed row has Retry.
+- See [the feature document](../features/enrich-lead-phone.md) for the provider probes and end-to-end evidence.
+
 ## Features requested by the README
 
 This table shows where each README feature fits and whether it is done.
@@ -146,6 +176,6 @@ This table shows where each README feature fits and whether it is done.
 | Feature | Touch points in the current design |
 | --- | --- |
 | New fields: phone number, years at company, LinkedIn URL | Done by the add-lead-fields change, see [the feature document](../features/add-lead-fields.md). |
-| Enrich phone with three providers in sequence | New Temporal workflow and provider activities, a provider abstraction, a workflow ID per lead for idempotency, an asynchronous start endpoint, a status representation on the lead, and progress feedback in the table. |
+| Enrich phone with three providers in sequence | Done by the enrich-lead-phone change, see [the feature document](../features/enrich-lead-phone.md). |
 | Email verification feedback | Done by the fix-email-verification-stall change, see [FIX-002](../fixes/FIX-002-email-verification-stall.md). |
 | Country code validation | Done by the fix-csv-country-codes change, see [FIX-001](../fixes/FIX-001-csv-country-codes.md). |
