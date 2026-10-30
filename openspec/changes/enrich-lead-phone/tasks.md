@@ -2,7 +2,7 @@
 
 ## 1. Baseline
 
-- [ ] 1.1 Rebase on `main` after `fix-email-verification-stall` and `add-lead-fields` merge, and verify all tests, type checks, and lint pass before any change
+- [x] 1.1 Rebase on `main` after `fix-email-verification-stall` and `add-lead-fields` merge, and verify all tests, type checks, and lint pass before any change
 - [ ] 1.2 Probe each provider endpoint with synthetic inputs and record the response shapes, latencies, and error bodies in `design/features/enrich-lead-phone.md`, and verify they match the design's assumptions
 
 ## 2. Configuration and data model
