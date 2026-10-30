@@ -32,7 +32,7 @@ const storedCountries = async () => {
 
 describe('POST /leads/bulk country codes', () => {
   it('never stores the invalid countries from the sample file', async () => {
-    const res = await request(app).post('/leads/bulk').send({ leads: sampleFileValidRows })
+    const res = await request(app).post('/leads/bulk').send({ rows: sampleFileValidRows })
 
     expect(res.status).toBe(200)
     const countries = Object.values(await storedCountries())
@@ -41,8 +41,10 @@ describe('POST /leads/bulk country codes', () => {
   })
 
   it('converts or clears each sample country as the spec requires', async () => {
-    await request(app).post('/leads/bulk').send({ leads: sampleFileValidRows })
+    await request(app).post('/leads/bulk').send({ rows: sampleFileValidRows })
 
+    // Steven Hernandez shares rodriguezbrian@smith.net with Iñaki Álvarez, so since add-lead-fields
+    // both rows are one person (lead-import spec), keeping the first name and Iñaki's country.
     expect(await storedCountries()).toEqual({
       'Iñaki Álvarez': 'ES',
       'Curtis Monson': 'US',
@@ -51,7 +53,6 @@ describe('POST /leads/bulk country codes', () => {
       'Latasha Martin': null,
       'Linda Choi': null,
       'Stephen Brown': 'FR',
-      'Steven Hernandez': null,
     })
   })
 
@@ -59,7 +60,7 @@ describe('POST /leads/bulk country codes', () => {
     const res = await request(app)
       .post('/leads/bulk')
       .send({
-        leads: [{ firstName: 'Ada', lastName: 'Lovelace', email: 'ada@example.com', countryCode: 724 }],
+        rows: [{ firstName: 'Ada', lastName: 'Lovelace', email: 'ada@example.com', countryCode: 724 }],
       })
 
     expect(res.status).toBe(200)

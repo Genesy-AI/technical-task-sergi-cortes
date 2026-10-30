@@ -18,11 +18,11 @@
 
 ## 4. Import
 
-- [ ] 4.1 Write tests for header mapping and aliases, grouping by email, current-role selection, person-level conflicts, and invalid values, and verify they fail first
-- [ ] 4.2 Implement the shared import function and `POST /leads/import/preview` with request limits, and verify the tests from 4.1 pass
-- [ ] 4.3 Make `POST /leads/bulk` use the same function and detect existing leads by email, and verify API tests for duplicates by email and same-name different-email pass
-- [ ] 4.4 Remove `POST /leads/country-codes/normalize` and its tests, and verify the `lead-country-code` scenarios still pass through the new preview
-- [ ] 4.5 Switch the import modal to the backend preview, showing grouped leads, roles, and notes, and verify with component tests
+- [x] 4.1 Write tests for header mapping and aliases, grouping by email, current-role selection, person-level conflicts, and invalid values, and verify they fail first
+- [x] 4.2 Implement the shared import function and `POST /leads/import/preview` with request limits, and verify the tests from 4.1 pass
+- [x] 4.3 Make `POST /leads/bulk` use the same function and detect existing leads by email, and verify API tests for duplicates by email and same-name different-email pass
+- [x] 4.4 Remove `POST /leads/country-codes/normalize` and its tests, and verify the `lead-country-code` scenarios still pass through the new preview
+- [x] 4.5 Switch the import modal to the backend preview, showing grouped leads, roles, and notes, and verify with component tests
 
 ## 5. Leads API and table
 

@@ -1,21 +1,17 @@
+import { CsvRow } from './importPreview'
+
+/** The raw rows of the file; the backend maps, groups, and validates them. */
 export interface LeadsBulkImportInput {
-  leads: {
-    firstName: string
-    lastName: string
-    email: string
-    jobTitle?: string
-    countryCode?: string
-    companyName?: string
-  }[]
+  rows: CsvRow[]
 }
 
 export interface LeadsBulkImportOutput {
   success: boolean
   importedCount: number
   duplicatesSkipped: number
-  invalidLeads: number
+  invalidRows: number
   errors: Array<{
-    lead: LeadsBulkImportInput['leads'][number]
+    email: string
     error: string
   }>
 }

@@ -1,226 +1,68 @@
-import { describe, it, expect } from 'vitest'
-import { parseCsv, isValidEmail } from './csvParser'
+import { describe, expect, it } from 'vitest'
+import { readCsvRows } from './csvParser'
 
-describe('isValidEmail', () => {
-  it('should return true for valid email addresses', () => {
-    expect(isValidEmail('test@example.com')).toBe(true)
-    expect(isValidEmail('user.name@domain.co.uk')).toBe(true)
-    expect(isValidEmail('first.last+tag@example.org')).toBe(true)
-    expect(isValidEmail('123@456.com')).toBe(true)
+// Validation, header mapping, and grouping live in the backend import (backend/src/leads/importLeads.ts).
+// The browser only turns file text into rows, keeping headers as written.
+describe('readCsvRows', () => {
+  it('rejects empty content', () => {
+    expect(() => readCsvRows('')).toThrow('CSV content cannot be empty')
+    expect(() => readCsvRows('   \n  ')).toThrow('CSV content cannot be empty')
   })
 
-  it('should return false for invalid email addresses', () => {
-    expect(isValidEmail('')).toBe(false)
-    expect(isValidEmail('invalid')).toBe(false)
-    expect(isValidEmail('test@')).toBe(false)
-    expect(isValidEmail('@example.com')).toBe(false)
-    expect(isValidEmail('test.example.com')).toBe(false)
-    expect(isValidEmail('test@.com')).toBe(false)
-    expect(isValidEmail('test@example')).toBe(false)
-  })
-})
-
-describe('parseCsv', () => {
-  it('should throw error for empty content', () => {
-    expect(() => parseCsv('')).toThrow('CSV content cannot be empty')
-    expect(() => parseCsv('   ')).toThrow('CSV content cannot be empty')
+  it('rejects a file with only headers', () => {
+    expect(() => readCsvRows('firstName,lastName,email')).toThrow(
+      'CSV file appears to be empty or contains no valid data'
+    )
   })
 
-  it('should throw error for CSV with only headers', () => {
-    const csv = 'firstName,lastName,email'
-    expect(() => parseCsv(csv)).toThrow('CSV file appears to be empty or contains no valid data')
+  it('rejects rows whose field count does not match the header', () => {
+    expect(() => readCsvRows('firstName,lastName,email\nAda,Lovelace,ada@acme.com,extra,more')).toThrow(
+      /CSV parsing failed/
+    )
   })
 
-  it('should throw error for malformed CSV content', () => {
-    const malformedCsv = `firstName,lastName,email
-"John,Doe,john@example.com,extra"field`
-    expect(() => parseCsv(malformedCsv)).toThrow('CSV parsing failed')
+  it('rejects unterminated quotes', () => {
+    expect(() => readCsvRows('firstName,lastName\n"Ada,Lovelace')).toThrow(/CSV parsing failed/)
   })
 
-  it('should throw error for CSV with mismatched field count', () => {
-    const mismatchedCsv = `firstName,lastName,email
-John,Doe,john@example.com,ExtraField,AnotherExtra
-Jane,Smith`
-    expect(() => parseCsv(mismatchedCsv)).toThrow('CSV parsing failed')
+  it('returns one object per row with headers exactly as written', () => {
+    const rows = readCsvRows('First Name,LinkedIn Profile,yearsInRole\nAda,linkedin.com/in/ada,3')
+
+    expect(rows).toEqual([
+      { 'First Name': 'Ada', 'LinkedIn Profile': 'linkedin.com/in/ada', yearsInRole: '3' },
+    ])
   })
 
-  it('should throw error for CSV with critical delimiter issues', () => {
-    const noDelimiterCsv = `firstName lastName email
-John Doe john@example.com`
-    expect(() => parseCsv(noDelimiterCsv)).toThrow()
+  it('keeps quoted values with commas', () => {
+    const rows = readCsvRows('firstName,companyName\nAda,"Wang, Young and Rowland"')
+
+    expect(rows[0].companyName).toBe('Wang, Young and Rowland')
   })
 
-  it('should parse valid CSV with all required fields', () => {
-    const csv = `firstName,lastName,email,jobTitle,countryCode,companyName
-John,Doe,john.doe@example.com,Developer,US,Tech Corp`
+  it('trims headers and values', () => {
+    const rows = readCsvRows(' firstName , email \n  Ada  ,  ada@acme.com  ')
 
-    const result = parseCsv(csv)
-
-    expect(result).toHaveLength(1)
-    expect(result[0]).toEqual({
-      firstName: 'John',
-      lastName: 'Doe',
-      email: 'john.doe@example.com',
-      jobTitle: 'Developer',
-      countryCode: 'US',
-      companyName: 'Tech Corp',
-      isValid: true,
-      errors: [],
-      rowIndex: 2,
-    })
+    expect(rows).toEqual([{ firstName: 'Ada', email: 'ada@acme.com' }])
   })
 
-  it('should handle missing required fields and mark as invalid', () => {
-    const csv = `firstName,lastName,email
-,Smith,john@example.com
-John,,john@example.com
-John,Smith,`
+  it('skips empty lines', () => {
+    const rows = readCsvRows('firstName,email\nAda,ada@acme.com\n\nAlan,alan@example.com\n')
 
-    const result = parseCsv(csv)
-
-    expect(result).toHaveLength(3)
-
-    expect(result[0].isValid).toBe(false)
-    expect(result[0].errors).toContain('First name is required')
-
-    expect(result[1].isValid).toBe(false)
-    expect(result[1].errors).toContain('Last name is required')
-
-    expect(result[2].isValid).toBe(false)
-    expect(result[2].errors).toContain('Email is required')
+    expect(rows.map((row) => row.firstName)).toEqual(['Ada', 'Alan'])
   })
 
-  it('should validate email format', () => {
-    const csv = `firstName,lastName,email
-John,Doe,invalid-email
-Jane,Smith,jane@example.com`
+  it('keeps unrecognized columns for the backend to ignore', () => {
+    const rows = readCsvRows('firstName,favouriteColour\nAda,green')
 
-    const result = parseCsv(csv)
-
-    expect(result).toHaveLength(2)
-    expect(result[0].isValid).toBe(false)
-    expect(result[0].errors).toContain('Invalid email format')
-    expect(result[1].isValid).toBe(true)
+    expect(rows[0]).toEqual({ firstName: 'Ada', favouriteColour: 'green' })
   })
 
-  it('should handle CSV with quoted values', () => {
-    const csv = `firstName,lastName,email,jobTitle
-"John","Doe","john.doe@example.com","Software Engineer"`
+  it('reads the sample file header', () => {
+    const rows = readCsvRows(
+      'firstName,lastName,email,jobTitle,countryCode,companyName,yearsInRole,phoneNumber\n' +
+        'Chad,Smith,hancockjames@gmail.com,Child psychotherapist,TV,Global Tech Solutions,2,+1-280-754-0462x2154'
+    )
 
-    const result = parseCsv(csv)
-
-    expect(result).toHaveLength(1)
-    expect(result[0].firstName).toBe('John')
-    expect(result[0].lastName).toBe('Doe')
-    expect(result[0].email).toBe('john.doe@example.com')
-    expect(result[0].jobTitle).toBe('Software Engineer')
-  })
-
-  it('should skip empty rows', () => {
-    const csv = `firstName,lastName,email
-John,Doe,john@example.com
-,,
-Jane,Smith,jane@example.com`
-
-    const result = parseCsv(csv)
-
-    expect(result).toHaveLength(2)
-    expect(result[0].firstName).toBe('John')
-    expect(result[1].firstName).toBe('Jane')
-  })
-
-  it('should handle case-insensitive headers', () => {
-    const csv = `FIRSTNAME,LASTNAME,EMAIL,JOBTITLE,COUNTRYCODE,COMPANYNAME
-John,Doe,john@example.com,Developer,US,Tech Corp`
-
-    const result = parseCsv(csv)
-
-    expect(result).toHaveLength(1)
-    expect(result[0].firstName).toBe('John')
-    expect(result[0].lastName).toBe('Doe')
-    expect(result[0].email).toBe('john@example.com')
-    expect(result[0].jobTitle).toBe('Developer')
-  })
-
-  it('should handle missing optional fields', () => {
-    const csv = `firstName,lastName,email,jobTitle,countryCode
-John,Doe,john@example.com,,`
-
-    const result = parseCsv(csv)
-
-    expect(result).toHaveLength(1)
-    expect(result[0].jobTitle).toBeUndefined()
-    expect(result[0].countryCode).toBeUndefined()
-    expect(result[0].isValid).toBe(true)
-  })
-
-  it('should preserve row index correctly', () => {
-    const csv = `firstName,lastName,email
-John,Doe,john@example.com
-Jane,Smith,jane@example.com
-Bob,Johnson,bob@example.com`
-
-    const result = parseCsv(csv)
-
-    expect(result).toHaveLength(3)
-    expect(result[0].rowIndex).toBe(2)
-    expect(result[1].rowIndex).toBe(3)
-    expect(result[2].rowIndex).toBe(4)
-  })
-
-  it('should handle multiple validation errors per lead', () => {
-    const csv = `firstName,lastName,email
- , ,invalid-email`
-
-    const result = parseCsv(csv)
-
-    expect(result).toHaveLength(1)
-    expect(result[0].isValid).toBe(false)
-    expect(result[0].errors).toHaveLength(3)
-    expect(result[0].errors).toContain('First name is required')
-    expect(result[0].errors).toContain('Last name is required')
-    expect(result[0].errors).toContain('Invalid email format')
-  })
-
-  it('should handle extra columns not in header mapping', () => {
-    const csv = `firstName,lastName,email,unknownColumn
-John,Doe,john@example.com,someValue`
-
-    const result = parseCsv(csv)
-
-    expect(result).toHaveLength(1)
-    expect(result[0].firstName).toBe('John')
-    expect(result[0].lastName).toBe('Doe')
-    expect(result[0].email).toBe('john@example.com')
-    expect(result[0].isValid).toBe(true)
-  })
-
-  it('should handle mixed valid and invalid leads', () => {
-    const csv = `firstName,lastName,email
-John,Doe,john@example.com
-,Smith,invalid-email
-Jane,Johnson,jane@example.com`
-
-    const result = parseCsv(csv)
-
-    expect(result).toHaveLength(3)
-    expect(result[0].isValid).toBe(true)
-    expect(result[1].isValid).toBe(false)
-    expect(result[1].errors).toContain('First name is required')
-    expect(result[1].errors).toContain('Invalid email format')
-    expect(result[2].isValid).toBe(true)
-  })
-
-  it('should handle whitespace in fields', () => {
-    const csv = `firstName,lastName,email
- John , Doe , john@example.com `
-
-    const result = parseCsv(csv)
-
-    expect(result).toHaveLength(1)
-    expect(result[0].firstName).toBe('John')
-    expect(result[0].lastName).toBe('Doe')
-    expect(result[0].email).toBe('john@example.com')
-    expect(result[0].isValid).toBe(true)
+    expect(rows[0]).toMatchObject({ yearsInRole: '2', phoneNumber: '+1-280-754-0462x2154' })
   })
 })
