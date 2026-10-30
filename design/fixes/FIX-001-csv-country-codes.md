@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Fix ID | FIX-001 |
-| OpenSpec change | [fix-csv-country-codes](../../openspec/changes/fix-csv-country-codes/proposal.md) |
+| OpenSpec change | [fix-csv-country-codes](../../openspec/changes/archive/2026-10-30-fix-csv-country-codes/proposal.md) |
 | Capability | `lead-country-code` |
 | Assessment finding | D2 in [05-assessment.md](../architecture/05-assessment.md) |
 | Status | Resolved |

@@ -123,7 +123,7 @@ Duplicates inside the same CSV are not removed, because the key set is built fro
 ### Country code normalization
 
 `normalizeCountryCode` in `backend/src/utils/countryCode.ts` is the single place that decides which country a lead gets.
-It was introduced by the [fix-csv-country-codes](../../openspec/changes/fix-csv-country-codes/design.md) change, and the reasoning is in [decision 0001](../decisions/0001-backend-owns-country-code-conversion.md).
+It was introduced by the [fix-csv-country-codes](../../openspec/changes/archive/2026-10-30-fix-csv-country-codes/design.md) change, and the reasoning is in [decision 0001](../decisions/0001-backend-owns-country-code-conversion.md).
 
 ```text
 input --> trim --> empty?                     --> null (empty)

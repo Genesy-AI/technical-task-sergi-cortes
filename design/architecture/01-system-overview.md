@@ -122,6 +122,6 @@ There is no CI configuration, no end-to-end test suite, and no API or integratio
 ### Current state
 
 The table above is a snapshot from the initial analysis.
-The [fix-csv-country-codes](../../openspec/changes/fix-csv-country-codes/proposal.md) change restored the frontend type check, build, and lint, added API tests for the backend, and added component tests for the frontend.
+The [fix-csv-country-codes](../../openspec/changes/archive/2026-10-30-fix-csv-country-codes/proposal.md) change restored the frontend type check, build, and lint, added API tests for the backend, and added component tests for the frontend.
 The backend now has a `typecheck` script that also covers test files.
 The backend still has no lint configuration, and there is still no CI pipeline.

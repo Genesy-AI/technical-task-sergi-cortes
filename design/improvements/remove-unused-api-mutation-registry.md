@@ -6,5 +6,5 @@ It also caused the build-breaking type error fixed in task 2.3 of the change bel
 Removing it, or replacing it with plain `useMutation` calls when optimistic updates are needed, would cut dead complexity and two dependencies.
 Removal was not done in the bug fix because deleting a shared abstraction is a design decision for the team.
 
-Related change: [fix-csv-country-codes](../../openspec/changes/fix-csv-country-codes/proposal.md), task 2.3.
+Related change: [fix-csv-country-codes](../../openspec/changes/archive/2026-10-30-fix-csv-country-codes/proposal.md), task 2.3.
 Related finding: A9 in [05-assessment.md](../architecture/05-assessment.md).

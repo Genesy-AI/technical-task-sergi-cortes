@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-10-30
-- **Related change:** [fix-csv-country-codes](../../openspec/changes/fix-csv-country-codes/design.md)
+- **Related change:** [fix-csv-country-codes](../../openspec/changes/archive/2026-10-30-fix-csv-country-codes/design.md)
 - **Related fix:** [FIX-001](../fixes/FIX-001-csv-country-codes.md)
 
 ## Decision
