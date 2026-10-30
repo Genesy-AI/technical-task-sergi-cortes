@@ -65,7 +65,7 @@ Rejected because it would miss regional providers and need constant upkeep.
 ### Decision 3: One workflow per lead, providers as separate activities
 
 ```
-enrichPhoneWorkflow(leadId, { force })
+enrichPhoneWorkflow(leadId)
   lead = loadLead(leadId)
   attempts = []
   for provider in config.order:
@@ -96,6 +96,8 @@ It is independent of `verify-email-{leadId}`, and every save activity updates on
 
 Each provider's activities run on their own task queue (`phone-astra`, `phone-nimbus`, `phone-orion`) with its own worker in the backend process.
 An optional `PHONE_<PROVIDER>_MAX_PER_SECOND` sets the worker's `maxTaskQueueActivitiesPerSecond`, which the Temporal server enforces across all workers.
+During end-to-end verification, the server limit alone let bursts of three Orion calls through within 15 ms at a limit of 1 per second, because each task queue partition and open poll gets its own token.
+So a rate-limited provider's worker also sets `maxActivitiesPerSecond` and polls one task at a time, which keeps the backlog in Temporal, and spaces its calls by the interval in the lookup activity, counting that wait against the attempt's time limit.
 A 429 answer throws a retryable `ApplicationFailure` with `nextRetryDelay` taken from `Retry-After`, which the installed SDK supports.
 
 Alternatives considered:
@@ -108,7 +110,7 @@ Alternatives considered:
 | Field on `lead` | Type | Purpose |
 | --- | --- | --- |
 | `phoneEnrichmentStatus` | enum `NOT_STARTED`, `PENDING`, `FOUND`, `NOT_FOUND`, `FAILED` | Outcome and polling trigger |
-| `phoneEnrichmentStep` | enum of provider ids, nullable | The provider being tried, for progress |
+| `phoneEnrichmentProgress` | `Json`, nullable | `{ provider, position, total }` while a provider is being tried, so the table can show "Trying Nimbus Lookup (2/3)"; changed from a provider enum during implementation, because the UI also needs the position and total |
 | `phoneSource` | enum `IMPORT`, `ASTRA`, `NIMBUS`, `ORION`, nullable | Where the current phone came from |
 | `phoneEnrichmentAttempts` | `Json`, nullable | Per-provider result of the last lookup: skipped with reason, not found, errored, or found |
 | `phoneEnrichedAt` | `DateTime`, nullable | When the last lookup ended |
@@ -129,7 +131,8 @@ The backend loads the file with `process.loadEnvFile` when present, validates th
 
 ### Decision 8: Start endpoint and UI
 
-`POST /leads/enrich-phone` takes `{ leadIds, force }`, skips leads with a phone unless `force` is true, sets started leads to `PENDING`, starts workflows concurrently, and responds 202 with `{ started, skipped }`.
+`POST /leads/enrich-phone` takes `{ leadIds, force }`, skips leads with a phone unless `force` is true, sets started leads to `PENDING`, starts workflows concurrently, and responds 202 with `{ started, skipped, failed }`.
+During implementation, `force` stayed in the endpoint, so the workflow takes only the lead id, and `failed` lists leads whose workflow could not be started; they are marked `FAILED`.
 The Enrich menu gets "Enrich Phone", and a row with a phone gets "Re-enrich phone" behind a confirmation.
 The phone cell shows "Trying Nimbus Lookup (2/3)" while pending, the phone with a source badge when found, "No data found", or "Failed" with a retry button.
 The leads query's existing poll-while-pending condition from the email fix extends to `phoneEnrichmentStatus`.

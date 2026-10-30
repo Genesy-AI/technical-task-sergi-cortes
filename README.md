@@ -68,6 +68,24 @@ pnpm gen:prisma           # Generate Prisma client
 temporal server start-dev # Starts Temporal server
 ```
 
+**Backend configuration**
+
+```zsh
+cd backend
+cp .env.sample .env    # Then replace each "changeme" with the provider keys you were given
+```
+
+The backend loads `backend/.env` at startup when it exists, and variables already set in the shell take precedence.
+`backend/.env` is gitignored, and provider keys must only ever live there, never in source or docs.
+See `backend/.env.sample` for every variable:
+
+- `ASTRA_API_KEY`, `NIMBUS_API_KEY`, `ORION_API_KEY`: phone enrichment provider keys, required for each provider in the order.
+- `PHONE_PROVIDER_ORDER`: optional providers to try, in order, defaulting to `ASTRA,NIMBUS,ORION`.
+- `ASTRA_BASE_URL`, `NIMBUS_BASE_URL`, `ORION_BASE_URL`: optional endpoint overrides.
+- `PHONE_ASTRA_MAX_PER_SECOND`, `PHONE_NIMBUS_MAX_PER_SECOND`, `PHONE_ORION_MAX_PER_SECOND`: optional per-provider rate limits, enforced by Temporal across all workers.
+
+The phone enrichment workers validate this configuration when they start, and refuse to start with a message naming each missing or invalid variable.
+
 **Backend (develop)**
 
 ```zsh

@@ -37,5 +37,5 @@ flowchart LR
 
 - The codebase is intentionally small and contains seeded defects that match the README tasks.
 - The main design weaknesses are a monolithic route file with no validation layer, lead field lists duplicated across both packages, and an HTTP request that blocks on long-running workflows.
-- The Temporal integration is the natural extension point for the phone enrichment feature, but it needs an asynchronous start-and-observe model first.
+- Email verification and phone enrichment both run as Temporal workflows started in the background, one per lead, and the table polls for their outcomes.
 - At analysis time, unit tests pass in both packages, the frontend build fails on a type error, and the frontend lint command fails on configuration.

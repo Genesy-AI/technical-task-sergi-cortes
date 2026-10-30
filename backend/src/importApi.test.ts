@@ -71,6 +71,16 @@ describe('POST /leads/import/preview', () => {
 })
 
 describe('POST /leads/bulk', () => {
+  it('marks an imported phone as coming from the import, and starts enrichment as not started', async () => {
+    await request(app)
+      .post('/leads/bulk')
+      .send({ rows: [...adaRows, { firstName: 'No', lastName: 'Phone', email: 'no.phone@acme.com' }] })
+
+    const [ada, noPhone] = await storedLeads()
+    expect(ada).toMatchObject({ phoneSource: 'IMPORT', phoneEnrichmentStatus: 'NOT_STARTED' })
+    expect(noPhone).toMatchObject({ phoneSource: null, phoneEnrichmentStatus: 'NOT_STARTED' })
+  })
+
   it('stores each person once with their roles in file order', async () => {
     const res = await request(app).post('/leads/bulk').send({ rows: adaRows })
 

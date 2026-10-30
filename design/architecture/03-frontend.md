@@ -29,8 +29,9 @@ flowchart TB
 
 | Component | Lines | Responsibilities |
 | --- | --- | --- |
-| `LeadsList` | 367 | Fetches leads and the field registry, manages selection, toolbar, Enrich dropdown, delete and verify mutations, loading, error, and empty states. |
-| `LeadsTable` | 151 | Renders the visible registry columns per field type, with pinned selection and name columns, `tel:` and LinkedIn links, and truncation. |
+| `LeadsList` | 414 | Fetches leads and the field registry, manages selection, toolbar, Enrich dropdown, delete, verify, and phone lookup mutations, loading, error, and empty states. |
+| `LeadsTable` | 149 | Renders the visible registry columns per field type, with pinned selection and name columns, `tel:` and LinkedIn links, truncation, and `customCells` overrides per field. |
+| `PhoneCell` | 103 | Shows a lead's phone with its source, the provider being tried, "No data found" or "Lookup failed" with Retry, and a confirmed Re-enrich. |
 | `CsvImportModal` | 304 | File picking and drag-and-drop, parsing into raw rows, the backend preview, summary stats, and the import mutation. |
 | `ImportPreviewTable` | 112 | Shows the backend's import plan per person, with roles, years at company, and notes, plus invalid rows. |
 | `MessageTemplateModal` | 319 | Template editor, field insertion at the caret, missing-field warnings, generate mutation, and per-lead error display. |
@@ -43,6 +44,7 @@ flowchart TB
 - The Enrich dropdown has no click-outside handler and no keyboard navigation.
 - "Guess Gender" is a placeholder that shows an error toast.
 - `EmailVerificationCell` shows each lead's verification status under the email: a spinner while verifying, labelled icons for the outcomes, and a Retry button when a check could not complete.
+- `PhoneCell` replaces the phone column through `customCells`, and its hover title lists what each provider returned.
 - The error state offers a full page reload instead of a query refetch.
 
 ## API client layer
@@ -81,7 +83,7 @@ The fix-csv-country-codes change added the field, and [an improvement note](../i
 
 - Server state lives in TanStack Query under `['leads', 'getMany']`, `['leads', 'fields']` (fetched once), and `['leads', 'importPreview', ...]` per loaded file.
 - Every mutation invalidates the leads key on success, so the whole table is refetched after each action.
-- The leads query disables retries, and refetches every two seconds while any lead's verification is `PENDING` (`leadsPolling.ts`).
+- The leads query disables retries, and refetches every two seconds while any lead's email verification or phone lookup is `PENDING` (`leadsPolling.ts`).
 - UI state such as selection and modal visibility is local `useState` in `LeadsList`, and the visible table columns persist in `localStorage` under a versioned key.
 - Selected lead IDs are not pruned after a refetch, so a deleted lead can remain selected.
 - `QueryClient` uses library defaults, and React Query Devtools are rendered unconditionally.

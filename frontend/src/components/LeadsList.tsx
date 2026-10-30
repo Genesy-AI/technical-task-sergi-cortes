@@ -5,6 +5,8 @@ import { api } from '../api'
 import { MessageTemplateModal } from './MessageTemplateModal'
 import { CsvImportModal } from './CsvImportModal'
 import { EmailVerificationCell } from './EmailVerificationCell'
+import { PhoneCell } from './PhoneCell'
+import { IconInfoCircle, IconPhone } from '@tabler/icons-react'
 import { pollIntervalFor } from './leadsPolling'
 import { ColumnMenu } from './ColumnMenu'
 import { useColumnVisibility } from './columnVisibility'
@@ -64,6 +66,35 @@ export const LeadsList: FC = () => {
       toast.error('Failed to start email verification. Please try again.')
     },
   })
+
+  const enrichPhoneMutation = useMutation({
+    mutationFn: async ({ ids, force }: { ids: number[]; force?: boolean }) =>
+      api.leads.enrichPhone(force ? { leadIds: ids, force } : { leadIds: ids }),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['leads', 'getMany'] })
+      const skipped =
+        data.skipped.length === 1
+          ? '1 lead already has a phone and was skipped'
+          : `${data.skipped.length} leads already have a phone and were skipped`
+      // One toast for what started and what was skipped, so a second one does not stack over the toolbar.
+      if (data.started.length > 0) {
+        const started = `Phone lookup started for ${leadsLabel(data.started.length)}`
+        toast.success(data.skipped.length > 0 ? `${started}; ${skipped}` : started)
+      } else if (data.skipped.length > 0) {
+        toast(skipped, { icon: <IconInfoCircle className="h-5 w-5 shrink-0 text-blue-500" aria-hidden /> })
+      }
+      if (data.failed.length > 0)
+        toast.error(`Could not start phone lookup for ${leadsLabel(data.failed.length)}`)
+    },
+    onError: () => {
+      toast.error('Failed to start phone lookup. Please try again.')
+    },
+  })
+
+  const startPhoneEnrichment = (ids: number[], force = false) => {
+    setIsEnrichDropdownOpen(false)
+    enrichPhoneMutation.mutate({ ids, force })
+  }
 
   const startVerification = (ids: number[]) => {
     setIsEnrichDropdownOpen(false)
@@ -222,6 +253,15 @@ export const LeadsList: FC = () => {
                       </div>
                     </button>
                     <button
+                      onClick={() => startPhoneEnrichment(selectedLeads)}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    >
+                      <div className="flex items-center">
+                        <IconPhone className="mr-3 h-4 w-4" aria-hidden />
+                        Enrich Phone
+                      </div>
+                    </button>
+                    <button
                       onClick={() => {
                         toast.error('Gender guessing feature is not yet implemented')
                         setIsEnrichDropdownOpen(false)
@@ -313,14 +353,23 @@ export const LeadsList: FC = () => {
               selectedLeads={selectedLeads}
               onSelectAll={handleSelectAll}
               onSelectLead={handleSelectLead}
-              renderEmail={(lead) => (
-                <EmailVerificationCell
-                  email={lead.email}
-                  status={lead.emailVerificationStatus}
-                  onRetry={() => startVerification([lead.id])}
-                  isRetrying={verifyEmailsMutation.isPending}
-                />
-              )}
+              customCells={{
+                email: (lead) => (
+                  <EmailVerificationCell
+                    email={lead.email}
+                    status={lead.emailVerificationStatus}
+                    onRetry={() => startVerification([lead.id])}
+                    isRetrying={verifyEmailsMutation.isPending}
+                  />
+                ),
+                phone: (lead) => (
+                  <PhoneCell
+                    lead={lead}
+                    onEnrich={(force) => startPhoneEnrichment([lead.id], force)}
+                    isStarting={enrichPhoneMutation.isPending}
+                  />
+                ),
+              }}
             />
           )}
 

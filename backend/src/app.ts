@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { Prisma, PrismaClient } from '@prisma/client'
 import express, { Express, Request, Response } from 'express'
 import { StartVerification, temporalVerificationStarter } from './emailVerification/start'
 import { buildImport } from './leads/importLeads'
@@ -6,12 +6,22 @@ import { emailsInRows, executeImport, findExistingEmails } from './leads/importS
 import { publicFieldDefinitions } from './leads/leadFields'
 import { toLeadView, withRoles } from './leads/leadView'
 import { getTemporalClient } from './temporal/client'
+import { StartPhoneEnrichment, temporalPhoneEnrichmentStarter } from './phoneEnrichment/start'
 import { generateMessageFromTemplate } from './utils/messageGenerator'
 
 /** Upper bound on CSV rows per import request; files in this product are far smaller. */
 const MAX_IMPORT_ROWS = 5000
 /** Upper bound on leads per verification request, so one request cannot start unbounded work. */
 const MAX_VERIFY_LEADS = 500
+
+/** Returns the ids when they are a non-empty, bounded list of positive integers, or null. */
+const validLeadIds = (leadIds: unknown): number[] | null =>
+  Array.isArray(leadIds) &&
+  leadIds.length > 0 &&
+  leadIds.length <= MAX_VERIFY_LEADS &&
+  leadIds.every((id) => Number.isInteger(id) && id > 0)
+    ? [...new Set(leadIds as number[])]
+    : null
 
 const errorMessage = (error: unknown) => (error instanceof Error ? error.message : 'Unknown error')
 
@@ -28,6 +38,8 @@ const validImportRows = (rows: unknown): Record<string, unknown>[] | string => {
 export interface AppDependencies {
   /** Defaults to starting a Temporal workflow through the shared client. */
   startEmailVerification?: StartVerification
+  /** Defaults to starting the phone lookup workflow through the shared client. */
+  startPhoneEnrichment?: StartPhoneEnrichment
 }
 
 /**
@@ -36,7 +48,10 @@ export interface AppDependencies {
  */
 export function createApp(
   prisma: PrismaClient,
-  { startEmailVerification = temporalVerificationStarter(getTemporalClient) }: AppDependencies = {}
+  {
+    startEmailVerification = temporalVerificationStarter(getTemporalClient),
+    startPhoneEnrichment = temporalPhoneEnrichmentStarter(getTemporalClient),
+  }: AppDependencies = {}
 ): Express {
   const app = express()
   // Large enough for MAX_UPLOAD_FILE_SIZE (2 MB) CSV files sent as rows.
@@ -251,6 +266,62 @@ export function createApp(
     } catch (error) {
       console.error('Error importing leads:', error)
       res.status(500).json({ error: 'Failed to import leads' })
+    }
+  })
+
+  // Starts one background phone lookup per lead and returns at once; the table polls for outcomes.
+  // Leads that already have a phone are skipped unless `force` asks to replace it.
+  app.post('/leads/enrich-phone', async (req: Request, res: Response) => {
+    const leadIds = validLeadIds(req.body?.leadIds)
+    const force: unknown = req.body?.force ?? false
+    if (!leadIds || typeof force !== 'boolean') {
+      return res.status(400).json({
+        error: `leadIds must be a non-empty array of at most ${MAX_VERIFY_LEADS} positive integers, and force a boolean`,
+      })
+    }
+
+    try {
+      const leads = await prisma.lead.findMany({
+        where: { id: { in: leadIds } },
+        select: { id: true, phone: true },
+        orderBy: { id: 'asc' },
+      })
+      if (leads.length === 0) {
+        return res.status(404).json({ error: 'No leads found with the provided IDs' })
+      }
+
+      const skipped = leads
+        .filter((lead) => lead.phone && !force)
+        .map((lead) => ({ leadId: lead.id, reason: 'HAS_PHONE' as const }))
+      const toStart = leads.filter((lead) => !lead.phone || force).map((lead) => lead.id)
+
+      if (toStart.length > 0) {
+        // Mark first, so the response and the next poll already show progress.
+        await prisma.lead.updateMany({
+          where: { id: { in: toStart } },
+          data: { phoneEnrichmentStatus: 'PENDING', phoneEnrichmentProgress: Prisma.DbNull },
+        })
+      }
+
+      const outcomes = await Promise.allSettled(toStart.map((leadId) => startPhoneEnrichment(leadId)))
+      const started: number[] = []
+      const failed: Array<{ leadId: number; error: string }> = []
+      outcomes.forEach((outcome, index) => {
+        if (outcome.status === 'fulfilled') started.push(toStart[index])
+        else failed.push({ leadId: toStart[index], error: errorMessage(outcome.reason) })
+      })
+
+      if (failed.length > 0) {
+        await prisma.lead.updateMany({
+          where: { id: { in: failed.map((f) => f.leadId) } },
+          data: { phoneEnrichmentStatus: 'FAILED' },
+        })
+      }
+
+      res.status(202).json({ started, skipped, failed })
+    } catch (error) {
+      console.error('Error starting phone enrichment:', error)
+      res.status(500).json({ error: 'Failed to start phone enrichment' })
     }
   })
 

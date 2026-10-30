@@ -26,6 +26,31 @@ model lead {
   /// Canonical `https://www.linkedin.com/in/<slug>` profile URL.
   linkedinUrl String?
   roles       leadRole[]
+  /// Where the current phone came from.
+  phoneSource PhoneSource?
+  phoneEnrichmentStatus PhoneEnrichmentStatus @default(NOT_STARTED)
+  /// `{ provider, position, total }` while a lookup is trying a provider; null otherwise.
+  phoneEnrichmentProgress Json?
+  /// What each provider did in the last lookup: skipped with a reason, not found, errored, or found.
+  phoneEnrichmentAttempts Json?
+  /// When the last lookup ended.
+  phoneEnrichedAt DateTime?
+}
+
+enum PhoneSource {
+  IMPORT
+  ASTRA
+  NIMBUS
+  ORION
+}
+
+/// A lead's phone lookup ends in FOUND, NOT_FOUND, or FAILED once it starts.
+enum PhoneEnrichmentStatus {
+  NOT_STARTED
+  PENDING
+  FOUND
+  NOT_FOUND
+  FAILED
 }
 
 /// One role a lead has held, in file order; exactly one per lead is current.

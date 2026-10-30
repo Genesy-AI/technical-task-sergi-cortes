@@ -1,0 +1,10 @@
+allowBuilds:
+  '@prisma/client': true
+  '@prisma/engines': true
+  '@swc/core': true
+  '@temporalio/core-bridge': true
+  esbuild: true
+  prisma: true
+  protobufjs: true
+  # Its postinstall refreshes the list over the network; the bundled list keeps installs reproducible.
+  free-email-domains: false

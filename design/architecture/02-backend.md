@@ -11,6 +11,7 @@ flowchart TB
         BOOT[Bootstrap<br/>PrismaClient]
         LISTEN[app.listen 4000]
         RUNW[runTemporalWorker]
+        RUNP[runPhoneEnrichmentWorkers]
     end
     subgraph app.ts
         CORS[CORS middleware, json parser]
@@ -35,9 +36,15 @@ flowchart TB
     WORKER -- "workflowsPath" --> WF
     WORKER -- "activities" --> ACT
     WF -- "proxyActivities" --> ACT
+    PWF[workflows/phone<br/>enrichPhoneWorkflow]
+    PACT[phoneEnrichment/<br/>providers, lookup, prismaStore]
+    ROUTES -- "Temporal Client" --> PWF
+    RUNP -- "one worker per queue" --> PWF
+    PWF -- "proxyActivities per provider queue" --> PACT
 ```
 
-`backend/src/index.ts` is only the entry point: it creates the Prisma client, passes it to `createApp` from `backend/src/app.ts`, listens on port 4000, and starts the worker.
+`backend/src/index.ts` is only the entry point: it creates the Prisma client, passes it to `createApp` from `backend/src/app.ts`, listens on port 4000, and starts the email verification worker and the phone enrichment workers.
+It imports `backend/src/loadEnv.ts` first, which loads `backend/.env` when present.
 `createApp` builds the routes without side effects, so tests can run them against their own database.
 
 There is no layering between HTTP, domain, and persistence.
@@ -73,6 +80,11 @@ erDiagram
         EmailVerificationStatus emailVerificationStatus "UNVERIFIED, PENDING, VERIFIED, INVALID, FAILED"
         String phone "nullable, cleaned text with optional extension"
         String linkedinUrl "nullable, canonical https://www.linkedin.com/in/slug"
+        PhoneSource phoneSource "nullable, IMPORT, ASTRA, NIMBUS, ORION"
+        PhoneEnrichmentStatus phoneEnrichmentStatus "NOT_STARTED, PENDING, FOUND, NOT_FOUND, FAILED"
+        Json phoneEnrichmentProgress "nullable, provider, position, total while pending"
+        Json phoneEnrichmentAttempts "nullable, per-provider result of the last lookup"
+        DateTime phoneEnrichedAt "nullable, when the last lookup ended"
     }
 ```
 
@@ -83,7 +95,8 @@ erDiagram
 - There are no indexes or unique constraints beyond the primary key and `leadRole(leadId, position)`; the import prevents email duplicates, the database does not.
 - `message` stores only the latest generated message, so history is lost on every generation.
 - `emailVerificationStatus` is an enum that defaults to `UNVERIFIED`, and `PENDING` drives the table's polling.
-- Phone enrichment state has no representation in the model yet, and is planned in the `enrich-lead-phone` change.
+- `phoneEnrichmentStatus` defaults to `NOT_STARTED`, and `PENDING` also drives the table's polling.
+- `phoneSource` records where the current phone came from: `IMPORT` for CSV phones, or the provider that found it.
 
 ### Migrations
 
@@ -95,6 +108,7 @@ erDiagram
 | `20250905104559_add_email_verified_column` | Adds `emailVerified` with default `NULL`. |
 | `20261030090000_replace_email_verified_with_status` | Replaces `emailVerified` with `emailVerificationStatus`, mapping true to `VERIFIED`, false to `INVALID`, and null to `UNVERIFIED`. |
 | `20261030100000_add_lead_profile_and_roles` | Adds `phone` and `linkedinUrl`, creates `leadRole`, and gives every existing lead one current role copied from its job title and company. |
+| `20261030110000_add_phone_enrichment` | Adds the phone enrichment fields, and marks existing phones as `IMPORT`. |
 
 The datasource URL is hardcoded in `schema.prisma` and the `dev.db` file is committed, so local data is shared through git.
 
@@ -116,6 +130,7 @@ None are authenticated, rate limited, or paginated.
 | `POST` | `/leads/import/preview` | Show what an import of these CSV rows would store | `{ rows[] }` with headers as written, at most 5000 | `{ totalRows, leads[], invalidRows[] }` |
 | `POST` | `/leads/bulk` | Import CSV rows | `{ rows[] }` with headers as written, at most 5000 | `{ success, importedCount, duplicatesSkipped, invalidRows, errors[] }` |
 | `POST` | `/leads/verify-emails` | Start background email verification | `{ leadIds }`, at most 500 positive integers | `202 { started[], failed[{ leadId, error }] }`, or 404 when no id matches |
+| `POST` | `/leads/enrich-phone` | Start background phone lookups | `{ leadIds, force? }`, at most 500 positive integers | `202 { started[], skipped[{ leadId, reason }], failed[{ leadId, error }] }`, or 404 when no id matches |
 
 ### Handler patterns
 
@@ -204,6 +219,41 @@ sequenceDiagram
 - Workflow tests use `@temporalio/testing` with time skipping, and API tests run the endpoint against the same test server.
 
 Before the fix, a one-second timeout, a 20-second activity, and unlimited retries produced a workflow that never completed, inside a request that waited for it ([FIX-002](../fixes/FIX-002-email-verification-stall.md)).
+
+### Phone enrichment
+
+Phone lookups follow the same start-then-observe pattern, introduced by the [enrich-lead-phone](../../openspec/changes/enrich-lead-phone/design.md) change.
+
+```mermaid
+sequenceDiagram
+    participant UI as Leads table
+    participant API as Express handler
+    participant S as Temporal Server
+    participant W as Phone workers (same process)
+    participant P as Provider APIs
+    participant DB as SQLite
+
+    UI->>API: POST /leads/enrich-phone { leadIds, force? }
+    API->>DB: skip leads with a phone unless force, set PENDING
+    API->>S: start enrichPhoneWorkflow(leadId), id enrich-phone-{leadId}
+    API-->>UI: 202 { started, skipped, failed }
+    S->>W: workflow task on phone-enrichment
+    loop each provider in PHONE_PROVIDER_ORDER until a phone is found
+        W->>DB: recordProgress(provider, position, total)
+        W->>P: lookup on phone-astra, phone-nimbus, or phone-orion
+    end
+    W->>DB: savePhone (FOUND) or saveOutcome (NOT_FOUND, FAILED)
+    loop every 2 s while any lead is PENDING
+        UI->>API: GET /leads
+    end
+```
+
+- Providers implement one skip, call, and normalize contract ([decision 0005](../decisions/0005-phone-provider-abstraction.md)): Astra needs an email, Nimbus also a job title, and Orion a business email domain.
+- The workflow runs on `phone-enrichment`, and each provider's lookup runs on its own task queue with an optional `PHONE_<PROVIDER>_MAX_PER_SECOND` limit, enforced by the server across workers and by spacing calls within the process ([decision 0006](../decisions/0006-one-task-queue-per-phone-provider.md)).
+- Lookups allow three attempts of 5, 8, and 10 seconds per provider; 400, 401, and 403 are not retried, and a 429 waits for its `Retry-After`.
+- A provider that errors is recorded and the next provider runs; the lead ends `FAILED` only when no phone was found and some provider errored.
+- Found numbers are stored as E.164 with `libphonenumber-js` when valid, and the store activities write only phone enrichment columns, so email verification can run on the same lead.
+- `runPhoneEnrichmentWorkers` refuses to start, naming the variable, when a provider key is missing, and the API keeps running without them.
 
 ## Cross-cutting concerns
 

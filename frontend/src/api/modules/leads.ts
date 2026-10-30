@@ -9,6 +9,7 @@ import { LeadsBulkImportInput, LeadsBulkImportOutput } from '../types/leads/bulk
 import { LeadsVerifyEmailsInput, LeadsVerifyEmailsOutput } from '../types/leads/verifyEmails'
 import { LeadsImportPreviewInput, LeadsImportPreviewOutput } from '../types/leads/importPreview'
 import { LeadsGetFieldsInput, LeadsGetFieldsOutput } from '../types/leads/getFields'
+import { LeadsEnrichPhoneInput, LeadsEnrichPhoneOutput } from '../types/leads/enrichPhone'
 import { ApiModule, endpoint } from '../utils'
 
 export const leadsApi = {
@@ -26,4 +27,5 @@ export const leadsApi = {
   verifyEmails: endpoint<LeadsVerifyEmailsOutput, LeadsVerifyEmailsInput>('post', '/leads/verify-emails'),
   importPreview: endpoint<LeadsImportPreviewOutput, LeadsImportPreviewInput>('post', '/leads/import/preview'),
   getFields: endpoint<LeadsGetFieldsOutput, LeadsGetFieldsInput>('get', '/leads/fields'),
+  enrichPhone: endpoint<LeadsEnrichPhoneOutput, LeadsEnrichPhoneInput>('post', '/leads/enrich-phone'),
 } as const satisfies ApiModule

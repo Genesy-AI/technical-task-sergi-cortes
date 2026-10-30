@@ -49,6 +49,7 @@ flowchart TB
     subgraph "Node process: pnpm dev in backend"
         API[Express HTTP server :4000]
         WRK[Temporal Worker<br/>taskQueue myQueue]
+        PWRK[Phone enrichment workers<br/>phone-enrichment, phone-astra,<br/>phone-nimbus, phone-orion]
     end
     subgraph "temporal server start-dev"
         TS[Temporal Server :7233<br/>namespace default]
@@ -59,12 +60,15 @@ flowchart TB
     API --> DB
     API -- "Client.workflow.execute" --> TS
     WRK -- "long poll tasks" --> TS
+    PWRK -- "long poll tasks" --> TS
+    PWRK -- "HTTPS, API key" --> PROV[Astra Dialer, Nimbus Lookup,<br/>Orion Connect]
 ```
 
 - The Express server and the Temporal worker share one Node process, started from `backend/src/index.ts`.
 - If the worker fails to connect to Temporal, the whole process exits, so the API cannot run without Temporal.
-- The API shares one lazily created Temporal client across requests, and starts verification workflows without waiting for them.
-- Addresses and ports are hardcoded: API port `4000`, Temporal `localhost:7233`, namespace `default`, task queue `myQueue`.
+- The API shares one lazily created Temporal client across requests, and starts verification and phone enrichment workflows without waiting for them.
+- The phone enrichment workers start in the same process and only log an error when a provider key is missing, so the API still runs without them.
+- The API port `4000` is hardcoded, and the Temporal address, namespace, and task queue default to `localhost:7233`, `default`, and `myQueue`.
 - The frontend reads the API base URL from `VITE_API_URL` in `frontend/.env`.
 
 ## Technology stack
@@ -92,9 +96,11 @@ flowchart TB
 
 | Setting | Location | Notes |
 | --- | --- | --- |
-| Database URL | `backend/prisma/schema.prisma` | Hardcoded `file:./dev.db`. The `DATABASE_URL` in `.env.sample` is unused and points to MySQL. |
+| Database URL | `backend/prisma/schema.prisma` | Hardcoded `file:./dev.db`. |
+| Backend environment | `backend/.env`, documented in `backend/.env.sample` | Loaded at startup when present, with shell variables taking precedence; the file is gitignored. |
+| Phone providers | `ASTRA_API_KEY`, `NIMBUS_API_KEY`, `ORION_API_KEY`, `*_BASE_URL`, `PHONE_PROVIDER_ORDER`, `PHONE_<PROVIDER>_MAX_PER_SECOND` | Validated by `backend/src/phoneEnrichment/config.ts` before the phone workers start. |
 | API port | `backend/src/index.ts` | Hardcoded `4000`. |
-| Temporal address | `backend/src/app.ts`, `backend/src/worker.ts` | Hardcoded `localhost:7233`, duplicated in two files. |
+| Temporal connection | `backend/src/temporal/config.ts` | `TEMPORAL_ADDRESS`, `TEMPORAL_NAMESPACE`, and `TEMPORAL_TASK_QUEUE`, with local defaults. |
 | API base URL | `frontend/.env` | `VITE_API_URL`, validated at module load in `frontend/src/utils/axios.ts`. |
 | CORS | `backend/src/app.ts` | Hand-written middleware allowing every origin. |
 
