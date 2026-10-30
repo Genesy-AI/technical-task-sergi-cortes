@@ -3,13 +3,13 @@
 ## 1. Baseline
 
 - [x] 1.1 Rebase on `main` after `fix-email-verification-stall` and `add-lead-fields` merge, and verify all tests, type checks, and lint pass before any change
-- [ ] 1.2 Probe each provider endpoint with synthetic inputs and record the response shapes, latencies, and error bodies in `design/features/enrich-lead-phone.md`, and verify they match the design's assumptions
+- [x] 1.2 Probe each provider endpoint with synthetic inputs and record the response shapes, latencies, and error bodies in `design/features/enrich-lead-phone.md`, and verify they match the design's assumptions
 
 ## 2. Configuration and data model
 
 - [x] 2.1 Write tests for loading and validating provider configuration, including a missing key and the provider order, and verify they fail first
 - [x] 2.2 Implement configuration loading, `backend/.env.sample`, and README setup notes, and verify the tests from 2.1 pass and no key appears in source
-- [ ] 2.3 Write a migration test for the enrichment fields and `phoneSource = IMPORT` on existing phones, then add the schema and migration, and verify the test passes
+- [x] 2.3 Write a migration test for the enrichment fields and `phoneSource = IMPORT` on existing phones, then add the schema and migration, and verify the test passes
 
 ## 3. Providers
 

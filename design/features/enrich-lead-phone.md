@@ -31,4 +31,16 @@ Recorded on 2026-10-30 with synthetic inputs only.
 
 ## Evidence
 
-Probe results and verification screenshots are added here during tasks 1.2, 8.1, and 8.2.
+### Provider probes (task 1.2)
+
+Re-probed on 2026-10-30 with synthetic inputs (`john.doe@example.com`, `CTO`, `Ada Lovelace`, `example.com`), three calls each plus one missing-field and one wrong-key call.
+
+| Provider | Status | Latency | Body |
+| --- | --- | --- | --- |
+| Astra Dialer | 200, 200, 200 | 0.2 s, 1.3 s, 0.2 s | `{"phoneNmbr":null}`, `{"phoneNmbr":"3857448574"}`, `{"phoneNmbr":null}` |
+| Nimbus Lookup | 200, 200, 200 | 2.2 s to 2.4 s | `{"phoneNmbr":9995992355,"countryCode":"ES"}` and similar |
+| Orion Connect | 500, 200, 500 | 1.5 s, 5.7 s, 0.2 s | `{"message":"Internal server error"}` or `{"phone":"6480136887"}` |
+
+- Every provider answers 400 `{"message":"Missing required input"}` for a missing field and 401 `Unauthorized` for a wrong key.
+- No provider sends rate-limit or `Retry-After` headers yet.
+- Compared with the design: Astra also signals "no phone" as `{"phoneNmbr":null}`, which its normalizer already treats as not found, and Orion's slowest success (5.7 s) stays inside its 10-second attempt limit.

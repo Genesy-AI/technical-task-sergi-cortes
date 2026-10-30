@@ -9,8 +9,8 @@ import type { PhoneEnrichmentProgress, ProviderAttempt } from './types'
  * rather than fail, so a deletion cannot make the workflow retry forever. Writes must touch only the phone and
  * the enrichment fields, so a phone lookup and an email verification can run on one lead at once.
  *
- * The Prisma-backed implementation belongs with task 2.3 of the enrich-lead-phone change, which adds
- * `phoneEnrichmentStatus`, `phoneEnrichmentStep`, `phoneSource`, `phoneEnrichmentAttempts`, and `phoneEnrichedAt`.
+ * `PrismaPhoneEnrichmentStore` in `prismaStore.ts` implements it on the lead row, using the fields
+ * `phoneEnrichmentStatus`, `phoneEnrichmentProgress`, `phoneSource`, `phoneEnrichmentAttempts`, and `phoneEnrichedAt`.
  */
 export interface PhoneEnrichmentStore {
   /** The lead's lookup inputs, or null when it no longer exists. */

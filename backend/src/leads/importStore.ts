@@ -46,6 +46,7 @@ const toCreateInput = (lead: PlannedLead): Prisma.leadCreateInput => ({
   lastName: lead.lastName,
   email: lead.email,
   phone: lead.phone,
+  phoneSource: lead.phone ? 'IMPORT' : null,
   linkedinUrl: lead.linkedinUrl,
   countryCode: lead.countryCode,
   jobTitle: lead.jobTitle,

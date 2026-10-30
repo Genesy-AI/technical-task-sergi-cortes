@@ -108,7 +108,7 @@ Alternatives considered:
 | Field on `lead` | Type | Purpose |
 | --- | --- | --- |
 | `phoneEnrichmentStatus` | enum `NOT_STARTED`, `PENDING`, `FOUND`, `NOT_FOUND`, `FAILED` | Outcome and polling trigger |
-| `phoneEnrichmentStep` | enum of provider ids, nullable | The provider being tried, for progress |
+| `phoneEnrichmentProgress` | `Json`, nullable | `{ provider, position, total }` while a provider is being tried, so the table can show "Trying Nimbus Lookup (2/3)"; changed from a provider enum during implementation, because the UI also needs the position and total |
 | `phoneSource` | enum `IMPORT`, `ASTRA`, `NIMBUS`, `ORION`, nullable | Where the current phone came from |
 | `phoneEnrichmentAttempts` | `Json`, nullable | Per-provider result of the last lookup: skipped with reason, not found, errored, or found |
 | `phoneEnrichedAt` | `DateTime`, nullable | When the last lookup ended |
