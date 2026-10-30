@@ -32,4 +32,14 @@ These follow the exploration and are open to review in the change's design.
 
 ## Evidence
 
-Baseline and verification screenshots are added here during tasks 1.2, 8.1, and 8.2.
+### Baseline (task 1.2)
+
+Imported `docs/leads-ok-1.csv` through the UI with Playwright on 2026-10-30, before any change.
+
+- The file's header includes `yearsInRole` and `phoneNumber`, for example `Chad,Smith,...,2,+1-280-754-0462x2154`.
+- The preview shows no phone or years, and all 5 rows import.
+- The stored lead has only `firstName`, `lastName`, `email`, `jobTitle`, `countryCode`, `companyName`, `message`, `emailVerificationStatus`, and timestamps, so both values are dropped.
+
+![Import preview before the change](assets/add-lead-fields/before-preview.png)
+
+![Leads table before the change](assets/add-lead-fields/before-table.png)

@@ -2,8 +2,8 @@
 
 ## 1. Baseline
 
-- [ ] 1.1 Rebase on `main` after `fix-email-verification-stall` merges, and verify all backend and frontend tests, type checks, and lint pass before any change
-- [ ] 1.2 Import `docs/leads-ok-1.csv` through the UI and verify the phone and years columns are dropped, recording screenshots in `design/features/add-lead-fields.md`
+- [x] 1.1 Rebase on `main` after `fix-email-verification-stall` merges, and verify all backend and frontend tests, type checks, and lint pass before any change
+- [x] 1.2 Import `docs/leads-ok-1.csv` through the UI and verify the phone and years columns are dropped, recording screenshots in `design/features/add-lead-fields.md`
 
 ## 2. Data model
 
