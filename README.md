@@ -18,6 +18,11 @@ These tasks are independent — tackle them in whatever order you consider most 
 - **PR Review:** Review an open pull request from a teammate.
 - **Analysis:** Propose codebase improvements and a technical roadmap.
 
+## Solution
+
+- [HOW_TO_SOLVE.md](HOW_TO_SOLVE.md): how the tasks were approached, with the AI harness, tools, and the spec-driven and test-driven workflow.
+- [IMPROVEMENTS.md](IMPROVEMENTS.md): the ten next improvements for security, performance, and reliability, ranked by risk.
+
 ## Submission
 
 Please record your screen (and, if possible, your voice) while you work on this task [(opensource tool)](https://cap.so/). We want to see how you collaborate with AI tools, how you reason through trade-offs, and how far you can get within the timebox. Feel free to get comfortable with the project first — set things up, explore the codebase, and understand how it all fits together before you start recording.
@@ -200,6 +205,7 @@ Review the open PR as if it were from a teammate. Leave inline comments where re
 ### Codebase Analysis & Roadmap
 
 Create an `IMPROVEMENTS.md` file as if it were a document in our project management tool.
+See [IMPROVEMENTS.md](IMPROVEMENTS.md).
 
 ## Evaluation
 
