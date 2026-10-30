@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `pnpm db:normalize-countries` backend command that converts stored country values, as a dry run unless `--apply` is given.
 - Backend API tests against an isolated SQLite database, a backend `typecheck` script, and frontend component tests with Testing Library.
 - Main OpenSpec spec `lead-country-code`, synced from the archived `fix-csv-country-codes` change.
+- Planned OpenSpec changes `add-lead-fields` and `enrich-lead-phone`, with feature specs in `design/features`.
 
 ### Changed
 
