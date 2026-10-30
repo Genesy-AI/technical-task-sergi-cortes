@@ -32,9 +32,9 @@
 
 ## 6. Documentation
 
-- [ ] 6.1 Record the "backend owns conversion with a preview endpoint" decision in `design/decisions`, linked to this change, and verify the file exists
-- [ ] 6.2 Update `design/architecture/02-backend.md` and `03-frontend.md` for the new endpoint, module, and preview, and verify the defect is marked resolved in `05-assessment.md`
-- [ ] 6.3 Add the fix to `CHANGELOG.md` under Fixed, and verify the entry follows Keep a Changelog
+- [x] 6.1 Record the "backend owns conversion with a preview endpoint" decision in `design/decisions`, linked to this change, and verify the file exists
+- [x] 6.2 Update `design/architecture/02-backend.md` and `03-frontend.md` for the new endpoint, module, and preview, and verify the defect is marked resolved in `05-assessment.md`
+- [x] 6.3 Add the fix to `CHANGELOG.md` under Fixed, and verify the entry follows Keep a Changelog
 
 ## 7. End-to-end verification
 

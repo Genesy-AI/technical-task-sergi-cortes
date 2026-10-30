@@ -19,13 +19,13 @@ These are bugs that affect users or block the build.
 | ID | Finding | Location | Impact |
 | --- | --- | --- | --- |
 | D1 | Email verification never completes for slow emails because the activity times out after one second and retries forever. | `backend/src/workflows/workflows.ts` | README bug "Email verification stalls". |
-| D2 | Country codes are not validated anywhere, so invalid values from CSV are stored and shown. | `frontend/src/utils/csvParser.ts`, `/leads/bulk` | README bug "CSV country codes". |
-| D3 | Frontend build fails with TS2741 because the optimistic lead lacks `emailVerified`. | `frontend/src/api/mutations/useApiMutation.ts` | `pnpm build` fails. |
-| D4 | Frontend lint fails because ESLint 9 needs a flat config. | `frontend/.eslintrc.cjs` | `pnpm lint` fails. |
-| D5 | `POST /leads` reads `name` while the client sends `firstName`. | `backend/src/index.ts` | Create always returns 400. |
-| D6 | The client calls `PUT /leads/:id` while the server exposes `PATCH`, and the server reads `name`. | `frontend/src/api/modules/leads.ts`, `backend/src/index.ts` | Update always returns 404. |
+| D2 | Country codes are not validated anywhere, so invalid values from CSV are stored and shown. | `frontend/src/utils/csvParser.ts`, `/leads/bulk` | README bug "CSV country codes". **Resolved** by [FIX-001](../fixes/FIX-001-csv-country-codes.md). |
+| D3 | Frontend build fails with TS2741 because the optimistic lead lacks `emailVerified`. | `frontend/src/api/mutations/useApiMutation.ts` | `pnpm build` fails. **Resolved** in fix-csv-country-codes task 2.3. |
+| D4 | Frontend lint fails because ESLint 9 needs a flat config. | `frontend/.eslintrc.cjs` | `pnpm lint` fails. **Resolved** in fix-csv-country-codes task 2.3. |
+| D5 | `POST /leads` reads `name` while the client sends `firstName`. | `backend/src/app.ts` | Create always returns 400. |
+| D6 | The client calls `PUT /leads/:id` while the server exposes `PATCH`, and the server reads `name`. | `frontend/src/api/modules/leads.ts`, `backend/src/app.ts` | Update always returns 404. |
 | D7 | Duplicate rows inside one CSV are all imported. | `/leads/bulk` | Duplicate leads. |
-| D8 | `GET /leads/:id` returns `null` with status 200 for a missing lead. | `backend/src/index.ts` | Wrong HTTP semantics. |
+| D8 | `GET /leads/:id` returns `null` with status 200 for a missing lead. | `backend/src/app.ts` | Wrong HTTP semantics. |
 | D9 | Template values containing `$&` or `$1` are treated as replacement patterns. | `backend/src/utils/messageGenerator.ts` | Corrupted messages for some inputs. |
 
 ## Design issues

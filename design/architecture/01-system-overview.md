@@ -84,7 +84,7 @@ flowchart TB
 | CSV parsing | PapaParse | ^5.5 |
 | Notifications | react-hot-toast | ^2.6 |
 | Tests | Vitest (node in backend, jsdom in frontend) | ^3.2 |
-| Lint | ESLint 9 with legacy `.eslintrc.cjs` (frontend only) | ^9.34 |
+| Lint | ESLint 9 flat config with `typescript-eslint` (frontend only) | ^9.34 |
 
 ## Configuration
 
@@ -92,9 +92,9 @@ flowchart TB
 | --- | --- | --- |
 | Database URL | `backend/prisma/schema.prisma` | Hardcoded `file:./dev.db`. The `DATABASE_URL` in `.env.sample` is unused and points to MySQL. |
 | API port | `backend/src/index.ts` | Hardcoded `4000`. |
-| Temporal address | `backend/src/index.ts`, `backend/src/worker.ts` | Hardcoded `localhost:7233`, duplicated in two files. |
+| Temporal address | `backend/src/app.ts`, `backend/src/worker.ts` | Hardcoded `localhost:7233`, duplicated in two files. |
 | API base URL | `frontend/.env` | `VITE_API_URL`, validated at module load in `frontend/src/utils/axios.ts`. |
-| CORS | `backend/src/index.ts` | Hand-written middleware allowing every origin. |
+| CORS | `backend/src/app.ts` | Hand-written middleware allowing every origin. |
 
 ## Local development
 
@@ -118,3 +118,10 @@ These results were measured on a clean checkout of `67c2047` with dependencies i
 Because the frontend `build` script runs `tsc -b` first, `pnpm build` in the frontend also fails.
 The `test` scripts run `vitest` without `run`, so they start in watch mode in an interactive terminal.
 There is no CI configuration, no end-to-end test suite, and no API or integration tests.
+
+### Current state
+
+The table above is a snapshot from the initial analysis.
+The [fix-csv-country-codes](../../openspec/changes/fix-csv-country-codes/proposal.md) change restored the frontend type check, build, and lint, added API tests for the backend, and added component tests for the frontend.
+The backend now has a `typecheck` script that also covers test files.
+The backend still has no lint configuration, and there is still no CI pipeline.

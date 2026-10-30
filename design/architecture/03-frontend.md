@@ -67,7 +67,8 @@ flowchart LR
 | `leads.getOne` | Returns `{ id, firstName, email }` | Returns the full lead or `null`. |
 | `leads.create` output | `{ id, firstName, email }` | Returns the full lead. |
 
-The optimistic lead built in `useApiMutation` lacks `emailVerified`, which causes the TS2741 error that breaks `pnpm build`.
+The optimistic lead built in `useApiMutation` lacked `emailVerified`, which caused a TS2741 error that broke `pnpm build`.
+The fix-csv-country-codes change added the field, and [an improvement note](../improvements/remove-unused-api-mutation-registry.md) proposes removing the unused hook.
 
 ## State management
 
@@ -87,7 +88,9 @@ The optimistic lead built in `useApiMutation` lacks `emailVerified`, which cause
 3. Each row maps normalized headers to fields with a `switch`, and unknown columns are ignored.
 4. Required fields and email format are validated, and each row gets `isValid`, `errors`, and `rowIndex`.
 
-- `countryCode` is accepted as any non-empty string, so values like `XXX` or `12` from the sample file pass.
+- `countryCode` is kept as the raw string, because the backend owns conversion.
+  The modal sends the file's distinct country values to `POST /leads/country-codes/normalize` and shows each row's result in a Country column through `CountryPreviewCell`.
+  A converted value shows its code and "Converted from" the original, a cleared value shows a blank and "not recognized, left blank", and a failed check shows the raw value with a warning without blocking the import.
 - `yearsInRole` and `phoneNumber` columns from the sample CSVs are silently dropped.
 - The file is read with `FileReader.readAsText`, which assumes UTF-8.
 - The extension check `file.name.endsWith('.csv')` is case-sensitive, so `.CSV` is rejected.
@@ -105,5 +108,6 @@ The optimistic lead built in `useApiMutation` lacks `emailVerified`, which cause
 - `tsconfig.app.json` enables `strict`, `noUnusedLocals`, and `noUnusedParameters`.
 - `globalTypes.d.ts` declares `$TSFixMe` aliases for `any`, which weakens the strict settings where used.
 - Prettier uses no semicolons, single quotes, and a 110 character print width.
-- ESLint 9 is installed with a legacy `.eslintrc.cjs`, so `pnpm lint` fails before linting any file.
-- Vitest runs in jsdom with `@testing-library/jest-dom`, but only `csvParser` has tests and no component is tested.
+- ESLint 9 runs from a flat `eslint.config.js` built on `typescript-eslint`, and `pnpm lint` passes.
+- Vitest runs in jsdom with Testing Library, and `csvParser` and `CsvImportModal` have tests.
+- `LeadsList.tsx` and `api/types/leads/verifyEmails.ts` are not formatted with the project's Prettier config.
