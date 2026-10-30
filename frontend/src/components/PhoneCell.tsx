@@ -40,7 +40,7 @@ export const PhoneCell: FC<PhoneCellProps> = ({ lead, onEnrich, isStarting }) =>
   }
 
   return (
-    <div className="text-sm text-gray-900">
+    <div className="min-w-44 text-sm text-gray-900">
       {phone ? (
         <a href={telHref(phone)} className="text-gray-900 hover:text-blue-600 hover:underline">
           {phone}
@@ -48,7 +48,7 @@ export const PhoneCell: FC<PhoneCellProps> = ({ lead, onEnrich, isStarting }) =>
       ) : (
         <span className="text-gray-400">-</span>
       )}
-      <div className="mt-0.5 flex items-center gap-2 text-xs">
+      <div className="mt-0.5 flex items-center gap-2 whitespace-nowrap text-xs">
         {status === 'PENDING' ? (
           <PendingLabel
             label={

@@ -6,7 +6,7 @@ import { MessageTemplateModal } from './MessageTemplateModal'
 import { CsvImportModal } from './CsvImportModal'
 import { EmailVerificationCell } from './EmailVerificationCell'
 import { PhoneCell } from './PhoneCell'
-import { IconPhone } from '@tabler/icons-react'
+import { IconInfoCircle, IconPhone } from '@tabler/icons-react'
 import { pollIntervalFor } from './leadsPolling'
 import { ColumnMenu } from './ColumnMenu'
 import { useColumnVisibility } from './columnVisibility'
@@ -72,14 +72,16 @@ export const LeadsList: FC = () => {
       api.leads.enrichPhone(force ? { leadIds: ids, force } : { leadIds: ids }),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['leads', 'getMany'] })
-      if (data.started.length > 0)
-        toast.success(`Phone lookup started for ${leadsLabel(data.started.length)}`)
-      if (data.skipped.length > 0) {
-        toast(
-          data.skipped.length === 1
-            ? '1 lead already has a phone and was skipped'
-            : `${data.skipped.length} leads already have a phone and were skipped`
-        )
+      const skipped =
+        data.skipped.length === 1
+          ? '1 lead already has a phone and was skipped'
+          : `${data.skipped.length} leads already have a phone and were skipped`
+      // One toast for what started and what was skipped, so a second one does not stack over the toolbar.
+      if (data.started.length > 0) {
+        const started = `Phone lookup started for ${leadsLabel(data.started.length)}`
+        toast.success(data.skipped.length > 0 ? `${started}; ${skipped}` : started)
+      } else if (data.skipped.length > 0) {
+        toast(skipped, { icon: <IconInfoCircle className="h-5 w-5 shrink-0 text-blue-500" aria-hidden /> })
       }
       if (data.failed.length > 0)
         toast.error(`Could not start phone lookup for ${leadsLabel(data.failed.length)}`)

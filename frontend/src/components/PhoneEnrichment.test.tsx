@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, within } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { Toaster } from 'react-hot-toast'
+import toast, { Toaster } from 'react-hot-toast'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { api } from '../api'
 import { fieldsFixture, leadFixture } from '../test/fixtures'
@@ -41,7 +41,11 @@ describe('phone enrichment in the leads table', () => {
     enrichPhone.mockReset()
     vi.mocked(api.leads.getFields).mockResolvedValue({ fields: fieldsFixture })
   })
-  afterEach(() => vi.restoreAllMocks())
+  afterEach(() => {
+    vi.restoreAllMocks()
+    // Toasts live in a module-level store, so one test's toasts would otherwise show in the next.
+    act(() => toast.remove())
+  })
 
   it('starts lookups for the selected leads, closes the menu, and reports what started and what was skipped', async () => {
     getMany.mockResolvedValue([
@@ -64,8 +68,35 @@ describe('phone enrichment in the leads table', () => {
 
     expect(enrichPhone).toHaveBeenCalledWith({ leadIds: [1, 2, 3] })
     expect(screen.queryByRole('button', { name: 'Enrich Phone' })).not.toBeInTheDocument()
-    expect(await screen.findByText('Phone lookup started for 2 leads')).toBeInTheDocument()
-    expect(await screen.findByText('1 lead already has a phone and was skipped')).toBeInTheDocument()
+    // One toast, so a second one does not stack over the toolbar.
+    expect(
+      await screen.findByText('Phone lookup started for 2 leads; 1 lead already has a phone and was skipped')
+    ).toBeInTheDocument()
+  })
+
+  it('explains with an info toast when every selected lead already has a phone', async () => {
+    getMany.mockResolvedValue([
+      leadFixture(1, 'Ada', 'UNVERIFIED', { phone: '555-0100-123', phoneSource: 'IMPORT' }),
+      leadFixture(2, 'Alan', 'UNVERIFIED', { phone: '555-0100-456', phoneSource: 'IMPORT' }),
+    ])
+    enrichPhone.mockResolvedValue({
+      started: [],
+      skipped: [
+        { leadId: 1, reason: 'HAS_PHONE' },
+        { leadId: 2, reason: 'HAS_PHONE' },
+      ],
+      failed: [],
+    })
+    renderList()
+
+    await userEvent.click(within(await rowOf('Ada')).getByRole('checkbox'))
+    await userEvent.click(within(await rowOf('Alan')).getByRole('checkbox'))
+    await userEvent.click(screen.getByRole('button', { name: 'Enrich' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enrich Phone' }))
+
+    const message = await screen.findByText('2 leads already have a phone and were skipped')
+    expect(message.closest('[role="status"]')?.parentElement?.querySelector('svg')).not.toBeNull()
+    expect(screen.queryByText(/Phone lookup started/)).not.toBeInTheDocument()
   })
 
   it('shows which provider is being tried while a lookup is pending', async () => {
