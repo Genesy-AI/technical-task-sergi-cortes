@@ -6,7 +6,7 @@
 | OpenSpec change | [fix-csv-country-codes](../../openspec/changes/fix-csv-country-codes/proposal.md) |
 | Capability | `lead-country-code` |
 | Assessment finding | D2 in [05-assessment.md](../architecture/05-assessment.md) |
-| Status | Planned |
+| Status | Resolved |
 
 ## Symptom
 
@@ -42,4 +42,51 @@ See the change's design.md for details.
 
 ## Evidence
 
-Reproduction screenshot, backfill dry-run output, and verification screenshot are added here during tasks 1.1, 5.3, and 7.1.
+### Reproduction (task 1.1)
+
+Reproduced on 2026-10-30 by importing `docs/leads-with-errors.csv` through the UI with Playwright against the local stack.
+The preview has no Country column, so the user cannot see the bad values before importing.
+After import, the table shows `12` for Amanda James and `XXX` for Latasha Martin and Linda Choi, and the seeded lead Emily Johnson shows `UK`.
+
+![Import preview before the fix](assets/FIX-001/before-preview.png)
+
+![Leads table before the fix](assets/FIX-001/before-table.png)
+
+### Backfill of stored values (task 5.3)
+
+Run against the committed `backend/prisma/dev.db` on 2026-10-30.
+
+```text
+$ pnpm db:normalize-countries
+Dry run, nothing written: 1 lead country value(s) would change.
+  #3 Emily Johnson: UK -> GB
+Run again with --apply to write these changes.
+
+$ pnpm db:normalize-countries --apply
+Applied: 1 lead country value(s) changed.
+  #3 Emily Johnson: UK -> GB
+
+$ pnpm db:normalize-countries --apply
+Applied: 0 lead country value(s) changed.
+```
+
+The binary `dev.db` in this change differs from `main` only by this one value.
+
+### Verification after the fix (task 7.1)
+
+Re-ran the same Playwright import of `docs/leads-with-errors.csv` against the fixed stack on 2026-10-30.
+
+- The preview has a Country column, shows "Converted from 12" next to `DZ` for Amanda James, and shows "XXX not recognized, left blank" for the cleared rows, which stay valid.
+- After import, the table shows `DZ` for Amanda James, blank for Latasha Martin and Linda Choi, and `GB` for the backfilled Emily Johnson.
+- The preview no longer shows red dashes for valid rows, and empty values use one consistent gray dash.
+
+![Import preview after the fix](assets/FIX-001/after-preview.png)
+
+![Import preview after the fix, scrolled to the converted row](assets/FIX-001/after-preview-scrolled.png)
+
+![Leads table after the fix](assets/FIX-001/after-table.png)
+
+### Related observations outside this fix
+
+- Curtis Monson is imported twice, because duplicates within one file are not removed (finding D7 in the architecture assessment).
+- The leads table clips its last column header at the card edge.

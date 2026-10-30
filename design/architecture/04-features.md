@@ -10,7 +10,7 @@ The wireframes in `docs/ui-wireframes.png` show the intended UX for the table, t
 | List leads | Page load | `GET /leads` | Working, unpaginated. |
 | Select leads | Row and header checkboxes | - | Working, with indeterminate header state. |
 | Delete leads | Toolbar "Delete" | `DELETE /leads` | Working, no confirmation dialog. |
-| Import leads from CSV | Toolbar "Import CSV" | `POST /leads/bulk` | Working, with the country code defect. |
+| Import leads from CSV | Toolbar "Import CSV" | `POST /leads/bulk`, `POST /leads/country-codes/normalize` | Working, and countries are converted to ISO codes or left blank. |
 | Generate messages | Enrich, then "Generate Messages" | `POST /leads/generate-messages` | Working. |
 | Verify emails | Enrich, then "Verify Email" | `POST /leads/verify-emails` and Temporal | Hangs for some leads. |
 | Guess gender | Enrich, then "Guess Gender" | none | Placeholder toast only. |
@@ -68,8 +68,8 @@ sequenceDiagram
 
 - Validation runs twice, in the browser for preview and in the backend for safety, with different rules.
 - The browser validates email format, while the backend only checks that email is a non-empty string.
-- Neither side validates `countryCode`, which is the cause of the "CSV country codes" bug in the README.
-- The sample `docs/leads-with-errors.csv` contains country values `XXX` and `12`, and they are imported and displayed as is.
+- The backend converts every `countryCode` to an ISO alpha-2 code or blank, and the preview shows the result per row before import.
+- The sample `docs/leads-with-errors.csv` imports `12` as `DZ` and `XXX` as blank, which fixes the "CSV country codes" bug in the README.
 - Per-row backend errors are returned but not shown to the user.
 
 ## Message generation
@@ -141,4 +141,4 @@ These features are not implemented yet and are listed here to show where they fi
 | New fields: phone number, years at company, LinkedIn URL | Prisma model and migration, bulk import mapping, `messageGenerator` allow-list and `Lead` type, frontend types, `csvParser` switch, `CsvImportModal` mapping and help text, `MessageTemplateModal` field list, `LeadsList` columns. |
 | Enrich phone with three providers in sequence | New Temporal workflow and provider activities, a provider abstraction, a workflow ID per lead for idempotency, an asynchronous start endpoint, a status representation on the lead, and progress feedback in the table. |
 | Email verification feedback | Activity timeout and retry policy, asynchronous start with status polling or streaming, per-lead pending state in the UI. |
-| Country code validation | Shared validation rule for ISO 3166-1 alpha-2 in the CSV parser and the bulk endpoint. |
+| Country code validation | Done by the fix-csv-country-codes change, see [FIX-001](../fixes/FIX-001-csv-country-codes.md). |

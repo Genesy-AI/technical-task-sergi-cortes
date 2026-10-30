@@ -3,18 +3,23 @@
 ## Structure
 
 The backend is a CommonJS TypeScript package run by `nodemon` and `ts-node` in development.
-Almost all logic lives in `backend/src/index.ts`, which mixes several responsibilities in one file.
+Almost all logic lives in `backend/src/app.ts`, which mixes several responsibilities in one file.
 
 ```mermaid
 flowchart TB
     subgraph index.ts
-        BOOT[Bootstrap<br/>PrismaClient, express, json parser]
-        CORS[CORS middleware]
-        ROUTES[9 route handlers<br/>validation + business logic + persistence]
+        BOOT[Bootstrap<br/>PrismaClient]
         LISTEN[app.listen 4000]
         RUNW[runTemporalWorker]
     end
+    subgraph app.ts
+        CORS[CORS middleware, json parser]
+        ROUTES[10 route handlers<br/>validation + business logic + persistence]
+    end
+    BOOT -- "createApp(prisma)" --> ROUTES
     MSG[utils/messageGenerator.ts]
+    CC[utils/countryCode.ts]
+    ROUTES --> CC
     WF[workflows/workflows.ts<br/>verifyEmailWorkflow]
     ACT[workflows/activities/utils.ts<br/>verifyEmail]
     WORKER[worker.ts]
@@ -28,6 +33,9 @@ flowchart TB
     WORKER -- "activities" --> ACT
     WF -- "proxyActivities" --> ACT
 ```
+
+`backend/src/index.ts` is only the entry point: it creates the Prisma client, passes it to `createApp` from `backend/src/app.ts`, listens on port 4000, and starts the worker.
+`createApp` builds the routes without side effects, so tests can run them against their own database.
 
 There is no layering between HTTP, domain, and persistence.
 Each route handler parses the body, validates it by hand, calls Prisma directly, and shapes the response.
@@ -86,6 +94,7 @@ None are authenticated, rate limited, or paginated.
 | `DELETE` | `/leads` | Delete many leads | `{ ids: number[] }` | `{ deletedCount }` |
 | `POST` | `/leads/generate-messages` | Render a template for many leads | `{ leadIds, template }` | `{ success, generatedCount, errors[] }` |
 | `POST` | `/leads/bulk` | Import many leads from parsed CSV | `{ leads[] }` | `{ success, importedCount, duplicatesSkipped, invalidLeads, errors[] }` |
+| `POST` | `/leads/country-codes/normalize` | Preview how country values will be stored | `{ values: string[] }`, at most 1000 values of at most 100 characters | `{ results: [{ value, code, outcome }] }` |
 | `POST` | `/leads/verify-emails` | Verify emails through Temporal | `{ leadIds }` | `{ success, verifiedCount, results[], errors[] }` |
 
 ### Handler patterns
@@ -109,7 +118,26 @@ The `/leads/bulk` handler runs these steps.
 
 Duplicates are detected by name only, not by email.
 Duplicates inside the same CSV are not removed, because the key set is built from the database only.
-`countryCode` is stored as received, with no format or ISO 3166 check.
+`countryCode` is converted to an ISO 3166-1 alpha-2 code, or stored as `null` when it cannot be converted, as described below.
+
+### Country code normalization
+
+`normalizeCountryCode` in `backend/src/utils/countryCode.ts` is the single place that decides which country a lead gets.
+It was introduced by the [fix-csv-country-codes](../../openspec/changes/fix-csv-country-codes/design.md) change, and the reasoning is in [decision 0001](../decisions/0001-backend-owns-country-code-conversion.md).
+
+```text
+input --> trim --> empty?                     --> null (empty)
+               --> UK or EL alias?            --> GB or GR
+               --> 2 letters, valid alpha-2?  --> uppercase code
+               --> 3 letters, valid alpha-3?  --> alpha-2
+               --> 1 to 3 digits, assigned?   --> alpha-2
+               --> English name, one match?   --> alpha-2
+               --> otherwise                  --> null (cleared)
+```
+
+- It uses `i18n-iso-countries` data, with its own name index so that names shared by two countries, such as "Congo", resolve to `null` instead of a guess.
+- The bulk import, `POST /leads/country-codes/normalize`, and the `pnpm db:normalize-countries` backfill command all use it.
+- The backfill defaults to a dry run and needs `--apply` to write.
 
 ### Message generation
 
@@ -168,4 +196,4 @@ That is the root cause of the "email verification stalls" bug described in the R
 | Security | Wildcard CORS, no authentication, no rate limiting, no request size limit beyond the Express default. |
 | Configuration | Hardcoded ports, addresses, and database URL. |
 | Shutdown | No graceful shutdown for HTTP server, Prisma, or worker. |
-| Testing | Unit tests for `messageGenerator` only. |
+| Testing | Unit tests for `messageGenerator` and `countryCode`, and API tests with `supertest` against `createApp` from `backend/src/app.ts`. Each test file gets its own copy of a SQLite database migrated from the real migrations, built in `src/test/globalSetup.ts`. |

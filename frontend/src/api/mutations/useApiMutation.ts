@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any --
+ * The typed mutation registry infers options through wildcard positions that only `any` matches.
+ * The hook is currently unused; see design/improvements/remove-unused-api-mutation-registry.md.
+ */
 import {
   DefaultError,
   QueryClient,
@@ -69,6 +73,7 @@ const apiMutationsOptions = (queryClient: QueryClient) =>
             countryCode: null,
             companyName: null,
             message: null,
+            emailVerified: null,
             ...input,
           }
           const newLeads: ApiOutput<typeof api.leads.getMany> = [...(previousValue ?? []), newLead]

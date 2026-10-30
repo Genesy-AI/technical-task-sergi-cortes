@@ -1,9 +1,10 @@
 import { FC, useState, useRef, useCallback, useMemo, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { api } from '../api'
 import { CsvLead, parseCsv } from '../utils/csvParser'
+import { CountryPreviewCell } from './CountryPreviewCell'
 
 interface CsvImportModalProps {
   isOpen: boolean
@@ -41,6 +42,23 @@ export const CsvImportModal: FC<CsvImportModalProps> = ({ isOpen, onClose }) => 
       duplicatesInCsv: duplicatesInCsv.length,
     }
   }, [csvData])
+
+  // The backend owns country conversion, so the preview asks it what each distinct value will become.
+  const distinctCountries = useMemo(
+    () => [...new Set(csvData.map((lead) => lead.countryCode).filter((value): value is string => !!value))],
+    [csvData]
+  )
+  const countryPreview = useQuery({
+    queryKey: ['leads', 'normalizeCountryCodes', distinctCountries],
+    queryFn: () => api.leads.normalizeCountryCodes({ values: distinctCountries }),
+    enabled: distinctCountries.length > 0,
+    staleTime: Infinity,
+    retry: false,
+  })
+  const countryResults = useMemo(
+    () => new Map(countryPreview.data?.results.map((result) => [result.value, result])),
+    [countryPreview.data]
+  )
 
   const handleFileSelect = (file: File) => {
     if (!file.name.endsWith('.csv')) {
@@ -240,6 +258,10 @@ export const CsvImportModal: FC<CsvImportModalProps> = ({ isOpen, onClose }) => 
                     CSV must include: firstName, lastName, email (required). Optional: jobTitle, countryCode,
                     companyName
                   </p>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Country accepts ISO codes such as ES, ESP, or 724, or an English name. Unrecognized values
+                    are left blank.
+                  </p>
                 </div>
               )}
             </div>
@@ -285,6 +307,9 @@ export const CsvImportModal: FC<CsvImportModalProps> = ({ isOpen, onClose }) => 
                         Company
                       </th>
                       <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                        Country
+                      </th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                         Errors
                       </th>
                     </tr>
@@ -304,12 +329,29 @@ export const CsvImportModal: FC<CsvImportModalProps> = ({ isOpen, onClose }) => 
                             </span>
                           )}
                         </td>
-                        <td className="px-3 py-2 text-sm text-gray-900">
+                        <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
                           {lead.firstName} {lead.lastName || ''}
                         </td>
-                        <td className="px-3 py-2 text-sm text-gray-900">{lead.email || '-'}</td>
-                        <td className="px-3 py-2 text-sm text-gray-900">{lead.companyName || '-'}</td>
-                        <td className="px-3 py-2 text-sm text-red-600">{lead.errors.join(', ') || '-'}</td>
+                        <td className="px-3 py-2 text-sm text-gray-900">
+                          {lead.email || <span className="text-gray-400">-</span>}
+                        </td>
+                        <td className="px-3 py-2 text-sm text-gray-900">
+                          {lead.companyName || <span className="text-gray-400">-</span>}
+                        </td>
+                        <td className="px-3 py-2 text-sm text-gray-900">
+                          <CountryPreviewCell
+                            value={lead.countryCode}
+                            result={lead.countryCode ? countryResults.get(lead.countryCode) : undefined}
+                            status={countryPreview.status}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-sm">
+                          {lead.errors.length > 0 ? (
+                            <span className="text-red-600">{lead.errors.join(', ')}</span>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
