@@ -103,12 +103,12 @@ describe('skip reasons', () => {
   })
 
   it.each([null, '', '   '])('skips Nimbus Lookup without a job title (%j)', (jobTitle) => {
-    expect(PROVIDERS.NIMBUS.inputFrom({ ...lead, jobTitle })).toEqual({ skip: 'Missing job title' })
+    expect(PROVIDERS.NIMBUS.inputFrom({ ...lead, jobTitle })).toEqual({ skip: 'no job title' })
   })
 
   it('skips Orion Connect for a free email address', () => {
     expect(PROVIDERS.ORION.inputFrom({ ...lead, email: 'ada@gmail.com' })).toEqual({
-      skip: 'No business domain',
+      skip: 'no business domain',
     })
   })
 

@@ -6,7 +6,7 @@ export const nimbus: PhoneProvider<{ email: string; jobTitle: string }> = {
 
   inputFrom: (lead) => {
     const jobTitle = lead.jobTitle?.trim()
-    return jobTitle ? { input: { email: lead.email, jobTitle } } : { skip: 'Missing job title' }
+    return jobTitle ? { input: { email: lead.email, jobTitle } } : { skip: 'no job title' }
   },
 
   request: (input, { apiKey, baseUrl }) => {

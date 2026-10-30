@@ -184,8 +184,8 @@ describe('enrichPhoneWorkflow', () => {
       status: 'NOT_FOUND',
       attempts: [
         { provider: 'ASTRA', result: 'NOT_FOUND' },
-        { provider: 'NIMBUS', result: 'SKIPPED', reason: 'Missing job title' },
-        { provider: 'ORION', result: 'SKIPPED', reason: 'No business domain' },
+        { provider: 'NIMBUS', result: 'SKIPPED', reason: 'no job title' },
+        { provider: 'ORION', result: 'SKIPPED', reason: 'no business domain' },
       ],
     })
     expect(store.get(leadId).status).toBe('NOT_FOUND')
@@ -268,7 +268,7 @@ describe('enrichPhoneWorkflow', () => {
         total: 3,
         attempts: [
           { provider: 'ASTRA', result: 'NOT_FOUND' },
-          { provider: 'NIMBUS', result: 'SKIPPED', reason: 'Missing job title' },
+          { provider: 'NIMBUS', result: 'SKIPPED', reason: 'no job title' },
         ],
       },
     ])
