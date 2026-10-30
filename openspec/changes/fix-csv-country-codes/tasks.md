@@ -26,9 +26,9 @@
 
 ## 5. Backfill
 
-- [ ] 5.1 Write tests for the backfill against a test database covering dry run, apply, and re-run, and verify they fail before implementation
-- [ ] 5.2 Implement the script and the `db:normalize-countries` package script, and verify the tests from 5.1 pass
-- [ ] 5.3 Run the dry run against `dev.db`, then apply it, and verify the only change is `UK` to `GB`, recording the output in the fix document
+- [x] 5.1 Write tests for the backfill against a test database covering dry run, apply, and re-run, and verify they fail before implementation
+- [x] 5.2 Implement the script and the `db:normalize-countries` package script, and verify the tests from 5.1 pass
+- [x] 5.3 Run the dry run against `dev.db`, then apply it, and verify the only change is `UK` to `GB`, recording the output in the fix document
 
 ## 6. Documentation
 

@@ -52,7 +52,27 @@ After import, the table shows `12` for Amanda James and `XXX` for Latasha Martin
 
 ![Leads table before the fix](assets/FIX-001/before-table.png)
 
-Related observations outside this fix:
+### Backfill of stored values (task 5.3)
+
+Run against the committed `backend/prisma/dev.db` on 2026-10-30.
+
+```text
+$ pnpm db:normalize-countries
+Dry run, nothing written: 1 lead country value(s) would change.
+  #3 Emily Johnson: UK -> GB
+Run again with --apply to write these changes.
+
+$ pnpm db:normalize-countries --apply
+Applied: 1 lead country value(s) changed.
+  #3 Emily Johnson: UK -> GB
+
+$ pnpm db:normalize-countries --apply
+Applied: 0 lead country value(s) changed.
+```
+
+The binary `dev.db` in this change differs from `main` only by this one value.
+
+### Related observations outside this fix
 
 - Curtis Monson is imported twice, because duplicates within one file are not removed (finding D7 in the architecture assessment).
 - The leads table clips its last column header at the card edge.
