@@ -18,5 +18,14 @@ model lead {
   countryCode String?
   companyName String?
   message     String?
-  emailVerified Boolean?
+  emailVerificationStatus EmailVerificationStatus @default(UNVERIFIED)
+}
+
+/// Every lead's email ends in exactly one of these after verification starts.
+enum EmailVerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  INVALID
+  FAILED
 }

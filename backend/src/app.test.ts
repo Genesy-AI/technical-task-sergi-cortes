@@ -28,4 +28,15 @@ describe('GET /leads', () => {
     expect(res.body).toHaveLength(1)
     expect(res.body[0]).toMatchObject({ firstName: 'Ada', lastName: 'Lovelace', email: 'ada@example.com' })
   })
+
+  it('reports an imported lead as unverified', async () => {
+    await request(app)
+      .post('/leads/bulk')
+      .send({ leads: [{ firstName: 'Ada', lastName: 'Lovelace', email: 'ada@example.com' }] })
+
+    const res = await request(app).get('/leads')
+
+    expect(res.body[0].emailVerificationStatus).toBe('UNVERIFIED')
+    expect(res.body[0]).not.toHaveProperty('emailVerified')
+  })
 })

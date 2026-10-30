@@ -13,8 +13,8 @@
 
 ## 3. Verification status model
 
-- [ ] 3.1 Write a migration test that seeds verified, not verified, and never checked leads and asserts the mapped statuses, and verify it fails before the migration exists
-- [ ] 3.2 Add the `EmailVerificationStatus` enum and the hand-edited data migration that drops `emailVerified`, and verify the test from 3.1 passes and new leads default to `UNVERIFIED`
+- [x] 3.1 Write a migration test that seeds verified, not verified, and never checked leads and asserts the mapped statuses, and verify it fails before the migration exists
+- [x] 3.2 Add the `EmailVerificationStatus` enum and the hand-edited data migration that drops `emailVerified`, and verify the test from 3.1 passes and new leads default to `UNVERIFIED`
 
 ## 4. Workflow and activities
 

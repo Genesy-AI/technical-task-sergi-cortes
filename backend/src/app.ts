@@ -322,7 +322,7 @@ export function createApp(prisma: PrismaClient): Express {
 
           await prisma.lead.update({
             where: { id: lead.id },
-            data: { emailVerified: Boolean(isVerified) },
+            data: { emailVerificationStatus: isVerified ? 'VERIFIED' : 'INVALID' },
           })
 
           results.push({ leadId: lead.id, emailVerified: isVerified })
