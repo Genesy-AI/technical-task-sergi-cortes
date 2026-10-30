@@ -39,9 +39,9 @@
 
 ## 8. End-to-end verification
 
-- [ ] 8.1 Run the stack with real provider endpoints, enrich several leads with business and free-mail emails and missing job titles from the UI, and verify each reaches an outcome with visible progress and skip reasons, recording screenshots in the feature document
-- [ ] 8.2 Set an Orion rate limit of 1 per second, enrich 5 leads that reach Orion, and verify from the Temporal history that Orion calls are spaced at least one second apart
-- [ ] 8.3 Run all tests, type checks, builds, and lint in both packages, and verify they pass
+- [x] 8.1 Run the stack with real provider endpoints, enrich several leads with business and free-mail emails and missing job titles from the UI, and verify each reaches an outcome with visible progress and skip reasons, recording screenshots in the feature document
+- [x] 8.2 Set an Orion rate limit of 1 per second, enrich 5 leads that reach Orion, and verify from the Temporal history that Orion calls are spaced at least one second apart
+- [x] 8.3 Run all tests, type checks, builds, and lint in both packages, and verify they pass
 
 ## Workflow follow-up
 
