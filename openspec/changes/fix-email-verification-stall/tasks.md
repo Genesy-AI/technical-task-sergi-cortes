@@ -30,9 +30,9 @@
 
 ## 6. Frontend
 
-- [ ] 6.1 Update lead and verify-emails types and the optimistic lead in `useApiMutation.ts`, and verify `tsc -b` passes
-- [ ] 6.2 Write component tests for the pending spinner, the four outcome displays, the started toast, polling while pending, and the retry action for `FAILED`, and verify they fail before implementation
-- [ ] 6.3 Implement the email cell, polling, toasts, and retry action, and verify the tests from 6.2 pass
+- [x] 6.1 Update lead and verify-emails types and the optimistic lead in `useApiMutation.ts`, and verify `tsc -b` passes
+- [x] 6.2 Write component tests for the pending spinner, the four outcome displays, the started toast, polling while pending, and the retry action for `FAILED`, and verify they fail before implementation
+- [x] 6.3 Implement the email cell, polling, toasts, and retry action, and verify the tests from 6.2 pass
 
 ## 7. Documentation
 
