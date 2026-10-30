@@ -24,9 +24,9 @@
 
 ## 5. Start endpoint
 
-- [ ] 5.1 Write API tests for `202` with started ids, `PENDING` status, `404` for unknown ids, request validation, idempotent repeated starts, re-run after `FAILED`, and leads set to `FAILED` when a start fails, and verify they fail before implementation
-- [ ] 5.2 Implement the endpoint with the shared lazy Temporal client, per-lead workflow ids, and the conflict and reuse policies, and verify the tests from 5.1 pass
-- [ ] 5.3 Return `emailVerificationStatus` from lead endpoints instead of `emailVerified`, and verify an API test for `GET /leads` asserts the new field
+- [x] 5.1 Write API tests for `202` with started ids, `PENDING` status, `404` for unknown ids, request validation, idempotent repeated starts, re-run after `FAILED`, and leads set to `FAILED` when a start fails, and verify they fail before implementation
+- [x] 5.2 Implement the endpoint with the shared lazy Temporal client, per-lead workflow ids, and the conflict and reuse policies, and verify the tests from 5.1 pass
+- [x] 5.3 Return `emailVerificationStatus` from lead endpoints instead of `emailVerified`, and verify an API test for `GET /leads` asserts the new field
 
 ## 6. Frontend
 
