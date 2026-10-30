@@ -314,16 +314,13 @@ export function createApp(prisma: PrismaClient): Express {
 
       for (const lead of leads) {
         try {
-          const isVerified = await client.workflow.execute(verifyEmailWorkflow, {
+          // The workflow now records the outcome itself; this synchronous route is replaced in task 5.2.
+          const outcome = await client.workflow.execute(verifyEmailWorkflow, {
             taskQueue: 'myQueue',
             workflowId: `verify-email-${lead.id}-${Date.now()}`,
-            args: [lead.email],
+            args: [lead.id, lead.email],
           })
-
-          await prisma.lead.update({
-            where: { id: lead.id },
-            data: { emailVerificationStatus: isVerified ? 'VERIFIED' : 'INVALID' },
-          })
+          const isVerified = outcome === 'VERIFIED'
 
           results.push({ leadId: lead.id, emailVerified: isVerified })
           verifiedCount += 1

@@ -18,9 +18,9 @@
 
 ## 4. Workflow and activities
 
-- [ ] 4.1 Write workflow tests with time skipping for the verified, invalid, and failed outcomes, the 30-second bound, and cancellation of timed-out attempts, and verify they fail before implementation
-- [ ] 4.2 Make `verifyEmail` heartbeat and wait with the cancellable context sleep, set the activity options from design.md, and verify the outcome and cancellation tests pass
-- [ ] 4.3 Add the `saveVerificationResult` activity and the failure mapping in the workflow, and verify the workflow tests from 4.1 and 2.4 pass
+- [x] 4.1 Write workflow tests with time skipping for the verified, invalid, and failed outcomes, the 30-second bound, and cancellation of timed-out attempts, and verify they fail before implementation
+- [x] 4.2 Make `verifyEmail` heartbeat and wait with the cancellable context sleep, set the activity options from design.md, and verify the outcome and cancellation tests pass
+- [x] 4.3 Add the `saveVerificationResult` activity and the failure mapping in the workflow, and verify the workflow tests from 4.1 and 2.4 pass
 
 ## 5. Start endpoint
 
