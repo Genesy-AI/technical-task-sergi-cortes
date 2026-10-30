@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local tooling artifacts
+.claude/worktrees/
+pnpm-workspace.yaml
